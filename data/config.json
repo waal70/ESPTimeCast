@@ -2,10 +2,10 @@
   "ssid": "",
   "password": "",
   "openWeatherApiKey": "ADD-YOUR-API-KEY-32-CHARACTERS",
-  "openWeatherCity": "Osaka",
-  "openWeatherCountry": "JP",
+  "openWeatherCity": "",
+  "openWeatherCountry": "",
   "clockDuration": "10000",
   "weatherDuration": "5000",
-  "utcOffsetInSeconds": 32400,
+  "timeZone": "",
   "weatherUnits": "metric"
 }
