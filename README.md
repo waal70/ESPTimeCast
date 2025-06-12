@@ -20,7 +20,12 @@ Setup and configuration are fully managed via a built-in web interface.
 - **Timezone Selection** from IANA names (DST integrated on backend)
 - **Persistent Config** stored in LittleFS, with backup/restore system
 - **Status Animations** for WiFi conection, AP mode, time syncing.
-
+- **Advanced Settings** panel with:
+  - Custom **Primary/Secondary NTP server** input
+  - **24/12h clock mode** toggle (24-hour default)
+  - **Flip display** (180 degrees)
+  - Adjustable display **brightness**
+    
 ---
 
 ## 🪛 Wiring
@@ -45,7 +50,7 @@ The built-in web interface provides full configuration for:
 - **Weather settings** (OpenWeatherMap API key, City, Country, Units)
 - **Time zone** (will auto-populate if TZ is found)
 - **Display durations** for clock and weather (milliseconds)
-- **Backup & Restore** config options
+- **Advanced Settings** (see below)
 
 ### First-time Setup / AP Mode
 
@@ -57,11 +62,27 @@ The built-in web interface provides full configuration for:
 3. Click **Save Setting** – the device saves config, reboots, and connects.
 
 ### UI Example:
-<img src="assets/webui2.png" alt="Web Interface" width="30%" />
+<img src="assets/webui3.png" alt="Web Interface" width="" max-width="320px" />
 
 ---
 
-## ⚙️ Configuration Notes
+## ⚙️ Advanced Settings
+
+Click the **cog icon** next to “Advanced Settings” in the web UI to reveal extra configuration options.  
+
+**Available advanced settings:**
+
+- **Primary NTP Server**: Override the default NTP server (e.g. `pool.ntp.org`)
+- **Secondary NTP Server**: Fallback NTP server (e.g. `time.nist.gov`)
+- **24/12h Clock**: Switch between 24-hour and 12-hour time formats (24-hour efault) 
+- **Flip Display**: Invert the display vertically/horizontally
+- **Brightness**: 0 (dim) to 15 (bright)
+
+*Tip: Changing these options takes effect after saving and rebooting.*
+
+---
+
+## 📝 Configuration Notes
 
 - **OpenWeatherMap API Key:** [Get yours here](https://openweathermap.org/api)
 - **City Name:** e.g. `Tokyo`, `London`, etc.
