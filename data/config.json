@@ -4,8 +4,13 @@
   "openWeatherApiKey": "ADD-YOUR-API-KEY-32-CHARACTERS",
   "openWeatherCity": "",
   "openWeatherCountry": "",
-  "clockDuration": "10000",
-  "weatherDuration": "5000",
+  "clockDuration": 10000,
+  "weatherDuration": 5000,
   "timeZone": "",
-  "weatherUnits": "metric"
+  "weatherUnits": "metric",
+  "brightness": 10,
+  "flipDisplay": false,
+  "ntpServer1": "pool.ntp.org",
+  "ntpServer2": "time.nist.gov",
+  "twelveHourToggle": false
 }

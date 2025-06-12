@@ -33,6 +33,13 @@ char timeZone[64] = "";
 unsigned long clockDuration = 10000;
 unsigned long weatherDuration = 5000;
 
+// ADVANCED SETTINGS
+int brightness = 7;
+bool flipDisplay = false;
+bool twelveHourToggle = false;   // <-- NEW: 12h/24h clock toggle
+char ntpServer1[64] = "pool.ntp.org";
+char ntpServer2[64] = "time.nist.gov";
+
 WiFiClient client;
 const byte DNS_PORT = 53;
 DNSServer dnsServer;
@@ -78,6 +85,11 @@ void printConfigToSerial() {
   Serial.print(F("Clock duration: ")); Serial.println(clockDuration);
   Serial.print(F("Weather duration: ")); Serial.println(weatherDuration);
   Serial.print(F("TimeZone (IANA): ")); Serial.println(timeZone);
+  Serial.print(F("Brightness: ")); Serial.println(brightness);
+  Serial.print(F("FlipDisplay: ")); Serial.println(flipDisplay ? "Yes" : "No");
+  Serial.print(F("12h Clock: ")); Serial.println(twelveHourToggle ? "Yes" : "No"); // <-- NEW
+  Serial.print(F("NTP Server 1: ")); Serial.println(ntpServer1);
+  Serial.print(F("NTP Server 2: ")); Serial.println(ntpServer2);
   Serial.println(F("========================================"));
   Serial.println();
 }
@@ -101,6 +113,11 @@ void loadConfig() {
     doc[F("clockDuration")] = 8000;
     doc[F("weatherDuration")] = 5000;
     doc[F("timeZone")] = "Asia/Tokyo";
+    doc[F("brightness")] = brightness;
+    doc[F("flipDisplay")] = flipDisplay;
+    doc[F("twelveHourToggle")] = twelveHourToggle;  // <-- NEW
+    doc[F("ntpServer1")] = ntpServer1;
+    doc[F("ntpServer2")] = ntpServer2;
     File f = LittleFS.open("/config.json", "w");
     if (f) {
       serializeJsonPretty(doc, f);
@@ -139,6 +156,11 @@ void loadConfig() {
   if (doc.containsKey("clockDuration")) clockDuration = doc["clockDuration"];
   if (doc.containsKey("weatherDuration")) weatherDuration = doc["weatherDuration"];
   if (doc.containsKey("timeZone")) strlcpy(timeZone, doc["timeZone"], sizeof(timeZone));
+  if (doc.containsKey("brightness")) brightness = doc["brightness"];
+  if (doc.containsKey("flipDisplay")) flipDisplay = doc["flipDisplay"];
+  if (doc.containsKey("twelveHourToggle")) twelveHourToggle = doc["twelveHourToggle"]; // <-- NEW
+  if (doc.containsKey("ntpServer1")) strlcpy(ntpServer1, doc["ntpServer1"], sizeof(ntpServer1));
+  if (doc.containsKey("ntpServer2")) strlcpy(ntpServer2, doc["ntpServer2"], sizeof(ntpServer2));
   if (strcmp(weatherUnits, "imperial") == 0)
     tempSymbol = 'F';
   else if (strcmp(weatherUnits, "standard") == 0)
@@ -193,8 +215,7 @@ void connectWiFi() {
 void setupTime() {
   sntp_stop();
   Serial.println(F("[TIME] Starting NTP sync..."));
-  configTime(0, 0, "pool.ntp.org", "time.nist.gov"); // Start NTP
-  // NOW set time zone after starting configTime
+  configTime(0, 0, ntpServer1, ntpServer2); // Use custom NTP servers
   setenv("TZ", ianaToPosix(timeZone), 1);
   tzset();
   ntpState = NTP_SYNCING;
@@ -231,12 +252,17 @@ void setupWebServer() {
     serializeJson(doc, response);
     request->send(200, "application/json", response);
   });
- server.on("/save", HTTP_POST, [](AsyncWebServerRequest *request){
+  server.on("/save", HTTP_POST, [](AsyncWebServerRequest *request){
     Serial.println(F("[WEBSERVER] Request: /save"));    
     DynamicJsonDocument doc(2048);
     for (int i = 0; i < request->params(); i++) {
       const AsyncWebParameter* p = request->getParam(i);
-      doc[p->name()] = p->value();
+      String n = p->name();
+      String v = p->value();
+      if (n == "brightness") doc[n] = v.toInt();
+      else if (n == "flipDisplay") doc[n] = (v == "true" || v == "on" || v == "1");
+      else if (n == "twelveHourToggle") doc[n] = (v == "true" || v == "on" || v == "1"); // <-- NEW
+      else doc[n] = v;
     }
     if (LittleFS.exists("/config.json")) {
       LittleFS.rename("/config.json", "/config.bak");
@@ -274,155 +300,62 @@ void setupWebServer() {
     request->send(200, "application/json", response);
     Serial.println(F("[WEBSERVER] Rebooting..."));
     request->onDisconnect([]() {
-    Serial.println(F("[WEBSERVER] Rebooting..."));
-    // delay(2500); // optional, can be reduced or omitted
-    ESP.restart();
-    });
-    
-});
-
-// server.on("/save", HTTP_POST, [](AsyncWebServerRequest *request){
-//   Serial.println(F("[WEBSERVER] Request: /save"));
-//   DynamicJsonDocument doc(2048);
-//   for (int i = 0; i < request->params(); i++) {
-//     const AsyncWebParameter* p = request->getParam(i);
-//     doc[p->name()] = p->value();
-//   }
-
-//   // Simulate "Failed to Write Config" error:
-//   Serial.println(F("[WEBSERVER] Simulating LittleFS read-only error"));
-//   LittleFS.end(); // Unmount the filesystem (make it read-only)
-
-//   if (LittleFS.exists("/config.json")) {
-//     LittleFS.rename("/config.json", "/config.bak");
-//   }
-//   File f = LittleFS.open("/config.json", "w");
-//   if (!f) {
-//     Serial.println(F("[WEBSERVER] Failed to open /config.json for writing"));
-//     DynamicJsonDocument errorDoc(256);
-//     errorDoc[F("error")] = "Failed to write config";
-//     String response;
-//     serializeJson(errorDoc, response);
-//     request->send(500, "application/json", response);
-//     return;
-//   }
-//   serializeJson(doc, f);
-//   f.close();
-
-//   // Remount the filesystem (allow writes again for future operations)
-//   Serial.println(F("[WEBSERVER] Remounting LittleFS"));
-//   if (!LittleFS.begin()) {
-//     Serial.println(F("[WEBSERVER] LittleFS mount failed after simulating error!"));
-//     // Handle the error appropriately (e.g., send an error response)
-//   }
-
-//   File verify = LittleFS.open("/config.json", "r");
-//   DynamicJsonDocument test(2048);
-//   DeserializationError err = deserializeJson(test, verify);
-//   verify.close();
-//   if (err) {
-//     Serial.print(F("[WEBSERVER] Config corrupted after save: "));
-//     Serial.println(err.f_str());
-//     DynamicJsonDocument errorDoc(256);
-//     errorDoc[F("error")] = "Config corrupted. Reboot cancelled.";
-//     String response;
-//     serializeJson(errorDoc, response);
-//     request->send(500, "application/json", response);
-//     return;
-//   }
-
-//   DynamicJsonDocument okDoc(128);
-//   okDoc[F("message")] = "Saved successfully. Rebooting...";
-//   String response;
-//   serializeJson(okDoc, response);
-//   request->send(200, "application/json", response);
-//   Serial.println(F("[WEBSERVER] Rebooting..."));
-//   ESP.restart();
-// });
-
-
-  // server.on("/restore", HTTP_POST, [](AsyncWebServerRequest *request){
-  //   Serial.println(F("[WEBSERVER] Request: /restore"));
-  //   if (LittleFS.exists("/config.bak")) {
-  //     LittleFS.remove("/config.json");
-  //     if (LittleFS.rename("/config.bak", "/config.json")) {
-  //       DynamicJsonDocument okDoc(128);
-  //       okDoc[F("message")] = "Backup restored.";
-  //       String response;
-  //       serializeJson(okDoc, response);
-  //       request->send(200, "application/json", response);
-  //     } else {
-  //       Serial.println(F("[WEBSERVER] Failed to rename backup"));
-  //       DynamicJsonDocument errorDoc(128);
-  //       errorDoc[F("error")] = "Failed to restore backup.";
-  //       String response;
-  //       serializeJson(errorDoc, response);
-  //       request->send(500, "application/json", response);
-  //       return;
-  //     }
-  //   } else {
-  //     Serial.println(F("[WEBSERVER] No backup found"));
-  //     DynamicJsonDocument errorDoc(128);
-  //     errorDoc[F("error")] = "No backup found.";
-  //     String response;
-  //     serializeJson(errorDoc, response);
-  //     request->send(404, "application/json", response);
-  //   }
-  // });
-
-server.on("/restore", HTTP_POST, [](AsyncWebServerRequest *request){
-  Serial.println(F("[WEBSERVER] Request: /restore"));
-  if (LittleFS.exists("/config.bak")) {
-    File src = LittleFS.open("/config.bak", "r");
-    if (!src) {
-      Serial.println(F("[WEBSERVER] Failed to open /config.bak"));
-      DynamicJsonDocument errorDoc(128);
-      errorDoc[F("error")] = "Failed to open backup file.";
-      String response;
-      serializeJson(errorDoc, response);
-      request->send(500, "application/json", response);
-      return;
-    }
-    File dst = LittleFS.open("/config.json", "w");
-    if (!dst) {
-      src.close();
-      Serial.println(F("[WEBSERVER] Failed to open /config.json for writing"));
-      DynamicJsonDocument errorDoc(128);
-      errorDoc[F("error")] = "Failed to open config for writing.";
-      String response;
-      serializeJson(errorDoc, response);
-      request->send(500, "application/json", response);
-      return;
-    }
-    // Copy contents
-    while (src.available()) {
-      dst.write(src.read());
-    }
-    src.close();
-    dst.close();
-
-    DynamicJsonDocument okDoc(128);
-    okDoc[F("message")] = "✅ Backup restored! Device will now reboot.";
-    String response;
-    serializeJson(okDoc, response);
-    request->send(200, "application/json", response);
-    request->onDisconnect([]() {
-      Serial.println(F("[WEBSERVER] Rebooting after restore..."));
+      Serial.println(F("[WEBSERVER] Rebooting..."));
       ESP.restart();
     });
+  });
 
-  } else {
-    Serial.println(F("[WEBSERVER] No backup found"));
-    DynamicJsonDocument errorDoc(128);
-    errorDoc[F("error")] = "No backup found.";
-    String response;
-    serializeJson(errorDoc, response);
-    request->send(404, "application/json", response);
-  }
-});
+  server.on("/restore", HTTP_POST, [](AsyncWebServerRequest *request){
+    Serial.println(F("[WEBSERVER] Request: /restore"));
+    if (LittleFS.exists("/config.bak")) {
+      File src = LittleFS.open("/config.bak", "r");
+      if (!src) {
+        Serial.println(F("[WEBSERVER] Failed to open /config.bak"));
+        DynamicJsonDocument errorDoc(128);
+        errorDoc[F("error")] = "Failed to open backup file.";
+        String response;
+        serializeJson(errorDoc, response);
+        request->send(500, "application/json", response);
+        return;
+      }
+      File dst = LittleFS.open("/config.json", "w");
+      if (!dst) {
+        src.close();
+        Serial.println(F("[WEBSERVER] Failed to open /config.json for writing"));
+        DynamicJsonDocument errorDoc(128);
+        errorDoc[F("error")] = "Failed to open config for writing.";
+        String response;
+        serializeJson(errorDoc, response);
+        request->send(500, "application/json", response);
+        return;
+      }
+      // Copy contents
+      while (src.available()) {
+        dst.write(src.read());
+      }
+      src.close();
+      dst.close();
 
+      DynamicJsonDocument okDoc(128);
+      okDoc[F("message")] = "✅ Backup restored! Device will now reboot.";
+      String response;
+      serializeJson(okDoc, response);
+      request->send(200, "application/json", response);
+      request->onDisconnect([]() {
+        Serial.println(F("[WEBSERVER] Rebooting after restore..."));
+        ESP.restart();
+      });
 
-    // Add the /ap_status endpoint here:
+    } else {
+      Serial.println(F("[WEBSERVER] No backup found"));
+      DynamicJsonDocument errorDoc(128);
+      errorDoc[F("error")] = "No backup found.";
+      String response;
+      serializeJson(errorDoc, response);
+      request->send(404, "application/json", response);
+    }
+  });
+
   server.on("/ap_status", HTTP_GET, [](AsyncWebServerRequest *request){
     Serial.print(F("[WEBSERVER] Request: /ap_status. isAPMode = "));
     Serial.println(isAPMode);
@@ -518,7 +451,6 @@ void fetchWeather() {
       }
       break; // All done!
     }
-    // If not yet body, keep looping for the header lines
     yield();
     delay(1);
   }
@@ -569,10 +501,11 @@ void setup() {
   Serial.println(F("[SETUP] Starting setup..."));
   P.begin();
   P.setFont(mFactory); // Custom font
-  P.setIntensity(8);
+  loadConfig(); // Load config before setting intensity & flip
+  P.setIntensity(brightness);
+  P.setZoneEffect(0, flipDisplay, PA_FLIP_UD);
+  P.setZoneEffect(0, flipDisplay, PA_FLIP_LR);
   Serial.println(F("[SETUP] Parola (LED Matrix) initialized"));
-  loadConfig();
-  Serial.println(F("[SETUP] Config loaded"));
   connectWiFi();
   Serial.println(F("[SETUP] Wifi connected"));  
   setupWebServer();
@@ -673,9 +606,9 @@ void loop() {
         fetchWeather();
         lastFetch = millis();
     }
-} else {
+  } else {
     weatherFetchInitiated = false;
-}
+  }
 
   // Time display logic
   time_t now = time(nullptr);
@@ -684,8 +617,15 @@ void loop() {
 
   int dayOfWeek = timeinfo.tm_wday;
   char* daySymbol = daysOfTheWeek[dayOfWeek];
-  char timeStr[6];
+
+  char timeStr[9]; // enough for "12:34 AM"
+if (twelveHourToggle) {
+  int hour12 = timeinfo.tm_hour % 12;
+  if (hour12 == 0) hour12 = 12;
+  sprintf(timeStr, "%d:%02d", hour12, timeinfo.tm_min);
+} else {
   sprintf(timeStr, "%02d:%02d", timeinfo.tm_hour, timeinfo.tm_min);
+}
   String formattedTime = String(daySymbol) + " " + String(timeStr);
 
   unsigned long displayDuration = (displayMode == 0) ? clockDuration : weatherDuration;
@@ -739,8 +679,7 @@ void loop() {
   const unsigned long displayUpdateInterval = 50;
   if (millis() - lastDisplayUpdate >= displayUpdateInterval) {
     lastDisplayUpdate = millis();
-}
+  }
 
   yield();
 }
-
