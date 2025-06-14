@@ -36,7 +36,9 @@ unsigned long weatherDuration = 5000;
 // ADVANCED SETTINGS
 int brightness = 7;
 bool flipDisplay = false;
-bool twelveHourToggle = false;   // <-- NEW: 12h/24h clock toggle
+bool twelveHourToggle = false;
+bool showDayOfWeek = true;
+bool showHumidity = false;
 char ntpServer1[64] = "pool.ntp.org";
 char ntpServer2[64] = "time.nist.gov";
 
@@ -55,10 +57,11 @@ char tempSymbol = 'C';
 unsigned long lastSwitch = 0;
 unsigned long lastColonBlink = 0;
 int displayMode = 0;
+int currentHumidity = -1;
 
 bool ntpSyncSuccessful = false;
 
-char daysOfTheWeek[7][12] = {"&", "-", "/", "?", "@", "=", "$"};
+char daysOfTheWeek[7][12] = {"&", "*", "/", "?", "@", "=", "$"};
 
 // NTP Synchronization State Machine
 enum NtpState {
@@ -86,8 +89,10 @@ void printConfigToSerial() {
   Serial.print(F("Weather duration: ")); Serial.println(weatherDuration);
   Serial.print(F("TimeZone (IANA): ")); Serial.println(timeZone);
   Serial.print(F("Brightness: ")); Serial.println(brightness);
-  Serial.print(F("FlipDisplay: ")); Serial.println(flipDisplay ? "Yes" : "No");
-  Serial.print(F("12h Clock: ")); Serial.println(twelveHourToggle ? "Yes" : "No"); // <-- NEW
+  Serial.print(F("Flip Display: ")); Serial.println(flipDisplay ? "Yes" : "No");
+  Serial.print(F("Show 12h Clock: ")); Serial.println(twelveHourToggle ? "Yes" : "No");
+  Serial.print(F("Show Day of the Week: ")); Serial.println(showDayOfWeek ? "Yes" : "No");
+  Serial.print(F("Show Humidity ")); Serial.println(showHumidity ? "Yes" : "No");
   Serial.print(F("NTP Server 1: ")); Serial.println(ntpServer1);
   Serial.print(F("NTP Server 2: ")); Serial.println(ntpServer2);
   Serial.println(F("========================================"));
@@ -107,15 +112,17 @@ void loadConfig() {
     doc[F("ssid")] = "";
     doc[F("password")] = "";
     doc[F("openWeatherApiKey")] = "";
-    doc[F("openWeatherCity")] = "Osaka";
-    doc[F("openWeatherCountry")] = "JP";
+    doc[F("openWeatherCity")] = "";
+    doc[F("openWeatherCountry")] = "";
     doc[F("weatherUnits")] = "metric";
-    doc[F("clockDuration")] = 8000;
+    doc[F("clockDuration")] = 10000;
     doc[F("weatherDuration")] = 5000;
-    doc[F("timeZone")] = "Asia/Tokyo";
+    doc[F("timeZone")] = "";
     doc[F("brightness")] = brightness;
     doc[F("flipDisplay")] = flipDisplay;
-    doc[F("twelveHourToggle")] = twelveHourToggle;  // <-- NEW
+    doc[F("twelveHourToggle")] = twelveHourToggle;
+    doc[F("showDayOfWeek")] = showDayOfWeek;
+    doc[F("showHumidity")] = showHumidity;
     doc[F("ntpServer1")] = ntpServer1;
     doc[F("ntpServer2")] = ntpServer2;
     File f = LittleFS.open("/config.json", "w");
@@ -158,7 +165,9 @@ void loadConfig() {
   if (doc.containsKey("timeZone")) strlcpy(timeZone, doc["timeZone"], sizeof(timeZone));
   if (doc.containsKey("brightness")) brightness = doc["brightness"];
   if (doc.containsKey("flipDisplay")) flipDisplay = doc["flipDisplay"];
-  if (doc.containsKey("twelveHourToggle")) twelveHourToggle = doc["twelveHourToggle"]; // <-- NEW
+  if (doc.containsKey("twelveHourToggle")) twelveHourToggle = doc["twelveHourToggle"];
+  if (doc.containsKey("showDayOfWeek")) showDayOfWeek = doc["showDayOfWeek"]; // <-- NEW
+  if (doc.containsKey("showHumidity")) showHumidity = doc["showHumidity"]; else showHumidity = false;
   if (doc.containsKey("ntpServer1")) strlcpy(ntpServer1, doc["ntpServer1"], sizeof(ntpServer1));
   if (doc.containsKey("ntpServer2")) strlcpy(ntpServer2, doc["ntpServer2"], sizeof(ntpServer2));
   if (strcmp(weatherUnits, "imperial") == 0)
@@ -261,7 +270,9 @@ void setupWebServer() {
       String v = p->value();
       if (n == "brightness") doc[n] = v.toInt();
       else if (n == "flipDisplay") doc[n] = (v == "true" || v == "on" || v == "1");
-      else if (n == "twelveHourToggle") doc[n] = (v == "true" || v == "on" || v == "1"); // <-- NEW
+      else if (n == "twelveHourToggle") doc[n] = (v == "true" || v == "on" || v == "1");
+      else if (n == "showDayOfWeek") doc[n] = (v == "true" || v == "on" || v == "1"); 
+      else if (n == "showHumidity") doc[n] = (v == "true" || v == "on" || v == "1");
       else doc[n] = v;
     }
     if (LittleFS.exists("/config.json")) {
@@ -476,13 +487,20 @@ void fetchWeather() {
 
   if (doc.containsKey("main") && doc["main"].containsKey("temp")) {
     float temp = doc["main"]["temp"];
-    currentTemp = String((int)round(temp)) + "º" + tempSymbol;
+    currentTemp = String((int)round(temp)) + "º";
     Serial.printf("[WEATHER] Temp: %s\n", currentTemp.c_str());
     weatherAvailable = true;
   } else {
     Serial.println(F("[WEATHER] Temperature not found in JSON payload"));
     weatherAvailable = false;
     return;
+  }
+
+  if (doc.containsKey("main") && doc["main"].containsKey("humidity")) {
+  currentHumidity = doc["main"]["humidity"];
+  Serial.printf("[WEATHER] Humidity: %d%%\n", currentHumidity);
+  } else {
+    currentHumidity = -1;
   }
 
   if (doc.containsKey("weather") && doc["weather"].is<JsonArray>() && doc["weather"][0].containsKey("main")) {
@@ -619,14 +637,21 @@ void loop() {
   char* daySymbol = daysOfTheWeek[dayOfWeek];
 
   char timeStr[9]; // enough for "12:34 AM"
-if (twelveHourToggle) {
-  int hour12 = timeinfo.tm_hour % 12;
-  if (hour12 == 0) hour12 = 12;
-  sprintf(timeStr, "%d:%02d", hour12, timeinfo.tm_min);
-} else {
-  sprintf(timeStr, "%02d:%02d", timeinfo.tm_hour, timeinfo.tm_min);
-}
-  String formattedTime = String(daySymbol) + " " + String(timeStr);
+  if (twelveHourToggle) {
+    int hour12 = timeinfo.tm_hour % 12;
+    if (hour12 == 0) hour12 = 12;
+    sprintf(timeStr, "%d:%02d", hour12, timeinfo.tm_min);
+  } else {
+    sprintf(timeStr, "%02d:%02d", timeinfo.tm_hour, timeinfo.tm_min);
+  }
+
+  // Only prepend day symbol if showDayOfWeek is true
+  String formattedTime;
+  if (showDayOfWeek) {
+    formattedTime = String(daySymbol) + " " + String(timeStr);
+  } else {
+    formattedTime = String(timeStr);
+  }
 
   unsigned long displayDuration = (displayMode == 0) ? clockDuration : weatherDuration;
   if (millis() - lastSwitch > displayDuration) {
@@ -658,7 +683,15 @@ if (twelveHourToggle) {
     }
   } else { // Weather mode
     if (weatherAvailable) {
-      P.print(currentTemp.c_str());
+      // --- Weather display string with humidity toggle and 99% cap ---
+      String weatherDisplay;
+      if (showHumidity && currentHumidity != -1) {
+        int cappedHumidity = (currentHumidity > 99) ? 99 : currentHumidity;
+        weatherDisplay = currentTemp + " " + String(cappedHumidity) + "%";
+      } else {
+        weatherDisplay = currentTemp + tempSymbol;
+      }
+      P.print(weatherDisplay.c_str());
       weatherWasAvailable = true;
     } else {
       if (weatherWasAvailable) {

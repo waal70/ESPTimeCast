@@ -416,19 +416,37 @@ textarea::placeholder {
       <input type="text" name="ntpServer1" id="ntpServer1" placeholder="Enter NTP address">
 
       <label>Secondary NTP Server:</label>
-      <input type="text" name="ntpServer2" id="ntpServer2" placeholder="Enter NTP address">      
+      <input type="text" name="ntpServer2" id="ntpServer2" placeholder="Enter NTP address">
+      <div class="toggles" style="padding: 0 1rem;">
+      <!-- Day of the week Toggle (Styled) -->
+      <label style="display: flex; align-items: center; margin-top: 1.75rem; justify-content: space-between;">
+        <span style="margin-right: 0.5em;">Show Day of Week:</span>
+        <span class="toggle-switch">
+          <input type="checkbox" name="showDayOfWeek" id="showDayOfWeek" checked>
+          <span class="toggle-slider"></span>
+        </span>
+      </label>
 
        <!-- 24/12hrs Clock Toggle (Styled) -->
-      <label style="display: flex; align-items: center; margin-top: 1.75rem;">
-        <span style="margin-right: 0.5em;">Display 12-hour Clock</span>
+      <label style="display: flex; align-items: center; margin-top: 1.75rem; justify-content: space-between;">
+        <span style="margin-right: 0.5em;">Display 12-hour Clock:</span>
         <span class="toggle-switch">
           <input type="checkbox" name="twelveHourToggle" id="twelveHourToggle">
           <span class="toggle-slider"></span>
         </span>
       </label>
 
+      <!-- Display humidity (Styled) -->
+      <label style="display: flex; align-items: center; margin-top: 1.75rem; justify-content: space-between;">
+        <span style="margin-right: 0.5em;">Show Humidity:</span>
+        <span class="toggle-switch">
+          <input type="checkbox" name="showHumidity" id="showHumidity">
+          <span class="toggle-slider"></span>
+        </span>
+      </label>
+
       <!-- Display Flip Toggle (Styled) -->
-      <label style="display: flex; align-items: center; margin-top: 1.75rem;">
+      <label style="display: flex; align-items: center; margin-top: 1.75rem; justify-content: space-between;">
         <span style="margin-right: 0.5em;">Flip Display (180°):</span>
         <span class="toggle-switch">
           <input type="checkbox" name="flipDisplay" id="flipDisplay">
@@ -438,8 +456,8 @@ textarea::placeholder {
 
             <!-- Brightness Slider with Value -->
       <label style="margin-top: 1.75rem;">Brightness: <span id="brightnessValue">10</span></label>
-      <input type="range" min="0" max="15" name="brightness" id="brightnessSlider" value="10" oninput="brightnessValue.textContent = brightnessSlider.value">      
-      <br>
+      <input style="width: 100%;" type="range" min="0" max="15" name="brightness" id="brightnessSlider" value="10" oninput="brightnessValue.textContent = brightnessSlider.value">   
+      </div>   
     </div>
 
   <input type="submit" class="primary-button" value="Save Settings">
@@ -500,6 +518,8 @@ window.onload = function () {
       document.getElementById('ntpServer1').value = data.ntpServer1 || "";
       document.getElementById('ntpServer2').value = data.ntpServer2 || "";
       document.getElementById('twelveHourToggle').checked = !!data.twelveHourToggle;
+      document.getElementById('showDayOfWeek').checked = !!data.showDayOfWeek;
+      document.getElementById('showHumidity').checked = !!data.showHumidity;
       // Auto-detect browser's timezone if not set in config
       if (!data.timeZone) {
         try {
@@ -558,6 +578,8 @@ async function submitConfig(event) {
   formData.set('brightness', document.getElementById('brightnessSlider').value);
   formData.set('flipDisplay', document.getElementById('flipDisplay').checked ? 'on' : '');
   formData.set('twelveHourToggle', document.getElementById('twelveHourToggle').checked ? 'on' : '');
+  formData.set('showDayOfWeek', document.getElementById('showDayOfWeek').checked ? 'on' : '');
+  formData.set('showHumidity', document.getElementById('showHumidity').checked ? 'on' : '');
 
   const params = new URLSearchParams();
   for (const pair of formData.entries()) {
