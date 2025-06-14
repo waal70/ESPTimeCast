@@ -22,7 +22,7 @@ Setup and configuration are fully managed via a built-in web interface.
 - **Status Animations** for WiFi conection, AP mode, time syncing.
 - **Advanced Settings** panel with:
   - Custom **Primary/Secondary NTP server** input
-  - Display **Day of the Week** toggle (dafualt in on)
+  - Display **Day of the Week** toggle (defualt in on)
   - **24/12h clock mode** toggle (24-hour default)
   - Show **Humidity** toggle (display Humidity besides Temperature)
   - **Flip display** (180 degrees)
