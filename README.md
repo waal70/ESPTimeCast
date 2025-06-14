@@ -1,7 +1,7 @@
 ![ESPTimeCast](assets/logo.svg)
 
 **ESPTimeCast** is a WiFi-connected LED matrix clock and weather station based on ESP8266 and MAX7219.  
-It displays the current time, day of the week (with custom symbols), and local weather fetched from OpenWeatherMap.  
+It displays the current time, day of the week (with custom symbols), and local weather (temp/humidity) fetched from OpenWeatherMap.  
 Setup and configuration are fully managed via a built-in web interface.  
 
 ![clock - weather](assets/demo.gif) 
@@ -14,15 +14,17 @@ Setup and configuration are fully managed via a built-in web interface.
 - **Simple Web Interface** for all configuration (WiFi, weather, time zone, display durations, and more)
 - **Automatic NTP Sync** with robust status feedback and retries
 - **Day of Week Display** with custom icons/symbols
-- **Weather Fetching** from OpenWeatherMap (every 5 minutes, with error handling)
-- **Temperature Unit Selector** (`C`, `F`, or `K`)
+- **Weather Fetching** from OpenWeatherMap (every 5 minutes, temp/humidity)
+- **Temperature Unit Selector** (`C`, `F`, or `K` displays in temp mode only)
 - **Fallback AP Mode** for easy first-time setup or WiFi recovery, with `/ap_status` endpoint
 - **Timezone Selection** from IANA names (DST integrated on backend)
 - **Persistent Config** stored in LittleFS, with backup/restore system
 - **Status Animations** for WiFi conection, AP mode, time syncing.
 - **Advanced Settings** panel with:
   - Custom **Primary/Secondary NTP server** input
+  - Display **Day of the Week** toggle (dafualt in on)
   - **24/12h clock mode** toggle (24-hour default)
+  - Show **Humidity** toggle (display Humidity besides Temperature)
   - **Flip display** (180 degrees)
   - Adjustable display **brightness**
     
@@ -62,7 +64,7 @@ The built-in web interface provides full configuration for:
 3. Click **Save Setting** – the device saves config, reboots, and connects.
 
 ### UI Example:
-<img src="assets/webui3.png" alt="Web Interface" width="" max-width="320px" />
+<img src="assets/webui4.png" alt="Web Interface" width="" max-width="320px" />
 
 ---
 
@@ -74,7 +76,9 @@ Click the **cog icon** next to “Advanced Settings” in the web UI to reveal e
 
 - **Primary NTP Server**: Override the default NTP server (e.g. `pool.ntp.org`)
 - **Secondary NTP Server**: Fallback NTP server (e.g. `time.nist.gov`)
-- **24/12h Clock**: Switch between 24-hour and 12-hour time formats (24-hour efault) 
+- **Day of the Week**: Display symbol for Day of the Week
+- **24/12h Clock**: Switch between 24-hour and 12-hour time formats (24-hour default)
+- **Humidity**: Display Humidity besides Temperature
 - **Flip Display**: Invert the display vertically/horizontally
 - **Brightness**: 0 (dim) to 15 (bright)
 
