@@ -8,7 +8,7 @@ Setup and configuration are fully managed via a built-in web interface.
 
 3D Printable case available [here:](https://cults3d.com/en/3d-model/gadget/wifi-connected-led-matrix-clock-and-weather-station-esp8266-and-max7219)
 
-<img src="assets/image1.png" alt="3D Printable Case" width="" max-width="320px" />
+<img src="assets/image01.png" alt="3D Printable Case" width="" max-width="320px" />
 
 ---
 
