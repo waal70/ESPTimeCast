@@ -1,14 +1,16 @@
-![ESPTimeCast](assets/logo.svg)
+# ESPTimeCast (forked)
+
+My fork is based on PlatformIO.
 
 **ESPTimeCast** is a WiFi-connected LED matrix clock and weather station based on ESP8266 and MAX7219.  
 It displays the current time, day of the week (with custom symbols), and local weather (temp/humidity) fetched from OpenWeatherMap.  
 Setup and configuration are fully managed via a built-in web interface.  
 
-![clock - weather](assets/demo.gif) 
+![clock - weather](assets/demo.gif)
 
-3D Printable case available [here:](https://cults3d.com/en/3d-model/gadget/wifi-connected-led-matrix-clock-and-weather-station-esp8266-and-max7219)
+3D Printable case available at [3D Printable Case on Cults3D](https://cults3d.com/en/3d-model/gadget/wifi-connected-led-matrix-clock-and-weather-station-esp8266-and-max7219)
 
-<img src="assets/image01.png" alt="3D Printable Case" width="" max-width="320px" />
+![3D Printable Case](assets/image01.png)
 
 ---
 
@@ -31,12 +33,12 @@ Setup and configuration are fully managed via a built-in web interface.
   - Show **Humidity** toggle (display Humidity besides Temperature)
   - **Flip display** (180 degrees)
   - Adjustable display **brightness**
-    
+
 ---
 
 ## 🪛 Wiring
 
-**Wemos D1 Mini (ESP8266) → MAX7219**
+### Wemos D1 Mini (ESP8266) → MAX7219
 
 | Wemos D1 Mini | MAX7219 |
 |:-------------:|:-------:|
@@ -67,8 +69,9 @@ The built-in web interface provides full configuration for:
 2. Set your WiFi and all other options.
 3. Click **Save Setting** – the device saves config, reboots, and connects.
 
-### UI Example:
-<img src="assets/webui4.png" alt="Web Interface" width="" max-width="320px" />
+### UI Example
+
+![Web Interface](assets/webui4.png)
 
 ---
 
@@ -158,13 +161,13 @@ The following table summarizes what will appear on the display in each scenario:
 - All status/error messages (`no ntp`, `no temp`) are shown exactly as written.
 
 **Legend:**
+
 - 🗓️ **Day Icon**: Custom symbol for day of week (`@`, `=`, etc.)
 - ⏰ **Time**: Current time (HH:MM)
 - 🌡️ **Temperature**: Weather from OpenWeatherMap
 - ✅ **Yes**: Data available
 - ❌ **No**: Data not available
 - — : Value does not affect this mode
-
 
 ---
 
@@ -177,4 +180,3 @@ Pull requests are welcome! For major changes, please open an issue first to disc
 ## ☕ Support this project
 
 If you like this project, you can [buy me a coffee](https://paypal.me/officialuphoto)!
-
