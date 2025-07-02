@@ -58,6 +58,7 @@ unsigned long lastSwitch = 0;
 unsigned long lastColonBlink = 0;
 int displayMode = 0;
 int currentHumidity = -1;
+int currentPressure = -1; // New variable for pressure
 
 bool ntpSyncSuccessful = false;
 
@@ -510,6 +511,14 @@ void fetchWeather() {
   } else {
     Serial.println(F("[WEATHER] Weather description not found in JSON payload"));
   }
+
+    if (doc["main"].is<JsonObject>() && doc["main"]["pressure"].is<int>()) {
+    currentPressure = doc["main"]["pressure"];
+    Serial.printf("[WEATHER] Pressure: %d hPa\n", currentPressure);
+  } else {
+    currentPressure = -1;
+  }
+  
   weatherFetched = true;
 }
 
@@ -655,9 +664,10 @@ void loop() {
 
   unsigned long displayDuration = (displayMode == 0) ? clockDuration : weatherDuration;
   if (millis() - lastSwitch > displayDuration) {
-    displayMode = (displayMode + 1) % 2;
+    displayMode++;
+    displayMode = displayMode % 3;
     lastSwitch = millis();
-    Serial.printf("[LOOP] Switching to display mode: %s\n", displayMode == 0 ? "CLOCK" : "WEATHER");
+    Serial.printf("[LOOP] Switching displaymode, Displaymode now: %d\n", displayMode);
   }
 
   P.setTextAlignment(PA_CENTER);
@@ -681,7 +691,7 @@ void loop() {
       if (!colonVisible) timeString.replace(":", " ");
       P.print(timeString);
     }
-  } else { // Weather mode
+  } else if (displayMode == 1) { // Weather screen 1mode
     if (weatherAvailable) {
       // --- Weather display string with humidity toggle and 99% cap ---
       String weatherDisplay;
@@ -690,6 +700,17 @@ void loop() {
         weatherDisplay = currentTemp + " " + String(cappedHumidity) + "%";
       } else {
         weatherDisplay = currentTemp + tempSymbol;
+      }
+      P.print(weatherDisplay.c_str());
+      weatherWasAvailable = true;
+    } } else if (displayMode == 2) { // Weather screen 2 mode
+      if (weatherAvailable) {
+      // --- Weather display string with pressure ---
+      String weatherDisplay = "";
+      if (currentPressure != -1) {
+         weatherDisplay = String(currentPressure) + " hPa";
+      } else {
+        weatherDisplay = " ??? hPa";
       }
       P.print(weatherDisplay.c_str());
       weatherWasAvailable = true;
