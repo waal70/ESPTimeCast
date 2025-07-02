@@ -572,7 +572,7 @@ void loop() {
 
   // WEATHER FETCH
   static unsigned long lastFetch = 0;
-  const unsigned long fetchInterval = 300000; // 5 minutes
+  const unsigned long fetchInterval = 900000; // 15 minutes
 
   // NTP state machine
   switch (ntpState) {
