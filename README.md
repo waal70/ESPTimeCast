@@ -43,9 +43,9 @@ Setup and configuration are fully managed via a built-in web interface.
 | Wemos D1 Mini | MAX7219 |
 |:-------------:|:-------:|
 | GND           | GND     |
-| D6            | CLK     |
-| D7            | CS      |
-| D8            | DIN     |
+| D5            | CLK     |
+| D2            | CS      |
+| D4            | DIN     |
 | 3V3           | VCC     |
 
 ---
@@ -126,14 +126,14 @@ Install these libraries (Library Manager / PlatformIO):
 
 ### LittleFS Upload
 
-Install the [LittleFS Uploader](https://randomnerdtutorials.com/arduino-ide-2-install-esp8266-littlefs/).
+Install the [LittleFS Uploader](https://randomnerdtutorials.com/esp32-vs-code-platformio-littlefs/).
 
 **To upload `/data`:**
 
-1. Open Command Palette:
-   - Windows: `Ctrl+Shift+P`
-   - macOS: `Cmd+Shift+P`
-2. Run: `Upload LittleFS to ESP8266`
+Open PIO interface
+Expand "Platform"
+Choose "Build Filesystem Image"
+Choose "Upload Filesystem Image"
 
 **Important:** Serial Monitor **must be closed** before uploading!
 
