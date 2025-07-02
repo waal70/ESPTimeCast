@@ -108,7 +108,7 @@ void loadConfig() {
 
   if (!LittleFS.exists("/config.json")) {
     Serial.println(F("[CONFIG] config.json not found, creating with defaults..."));
-    DynamicJsonDocument doc(512);
+    JsonDocument doc;
     doc[F("ssid")] = "";
     doc[F("password")] = "";
     doc[F("openWeatherApiKey")] = "";
@@ -147,29 +147,29 @@ void loadConfig() {
   }
   String jsonString = configFile.readString();
   configFile.close();
-  DynamicJsonDocument doc(2048);
+  JsonDocument doc;
   DeserializationError error = deserializeJson(doc, jsonString);
   if (error) {
     Serial.print(F("[ERROR] JSON parse failed: "));
     Serial.println(error.f_str());
     return;
   }
-  if (doc.containsKey("ssid")) strlcpy(ssid, doc["ssid"], sizeof(ssid));
-  if (doc.containsKey("password")) strlcpy(password, doc["password"], sizeof(password));
-  if (doc.containsKey("openWeatherApiKey")) strlcpy(openWeatherApiKey, doc["openWeatherApiKey"], sizeof(openWeatherApiKey));
-  if (doc.containsKey("openWeatherCity")) strlcpy(openWeatherCity, doc["openWeatherCity"], sizeof(openWeatherCity));
-  if (doc.containsKey("openWeatherCountry")) strlcpy(openWeatherCountry, doc["openWeatherCountry"], sizeof(openWeatherCountry));
-  if (doc.containsKey("weatherUnits")) strlcpy(weatherUnits, doc["weatherUnits"], sizeof(weatherUnits));
-  if (doc.containsKey("clockDuration")) clockDuration = doc["clockDuration"];
-  if (doc.containsKey("weatherDuration")) weatherDuration = doc["weatherDuration"];
-  if (doc.containsKey("timeZone")) strlcpy(timeZone, doc["timeZone"], sizeof(timeZone));
-  if (doc.containsKey("brightness")) brightness = doc["brightness"];
-  if (doc.containsKey("flipDisplay")) flipDisplay = doc["flipDisplay"];
-  if (doc.containsKey("twelveHourToggle")) twelveHourToggle = doc["twelveHourToggle"];
-  if (doc.containsKey("showDayOfWeek")) showDayOfWeek = doc["showDayOfWeek"]; // <-- NEW
-  if (doc.containsKey("showHumidity")) showHumidity = doc["showHumidity"]; else showHumidity = false;
-  if (doc.containsKey("ntpServer1")) strlcpy(ntpServer1, doc["ntpServer1"], sizeof(ntpServer1));
-  if (doc.containsKey("ntpServer2")) strlcpy(ntpServer2, doc["ntpServer2"], sizeof(ntpServer2));
+  if (doc["ssid"].is<const char*>()) strlcpy(ssid, doc["ssid"], sizeof(ssid));
+  if (doc["password"].is<const char*>()) strlcpy(password, doc["password"], sizeof(password));
+  if (doc["openWeatherApiKey"].is<const char*>()) strlcpy(openWeatherApiKey, doc["openWeatherApiKey"], sizeof(openWeatherApiKey));
+  if (doc["openWeatherCity"].is<const char*>()) strlcpy(openWeatherCity, doc["openWeatherCity"], sizeof(openWeatherCity));
+  if (doc["openWeatherCountry"].is<const char*>()) strlcpy(openWeatherCountry, doc["openWeatherCountry"], sizeof(openWeatherCountry));
+  if (doc["weatherUnits"].is<const char*>()) strlcpy(weatherUnits, doc["weatherUnits"], sizeof(weatherUnits));
+  if (doc["clockDuration"].is<unsigned long>()) clockDuration = doc["clockDuration"];
+  if (doc["weatherDuration"].is<unsigned long>()) weatherDuration = doc["weatherDuration"];
+  if (doc["timeZone"].is<const char*>()) strlcpy(timeZone, doc["timeZone"], sizeof(timeZone));
+  if (doc["brightness"].is<int>()) brightness = doc["brightness"];
+  if (doc["flipDisplay"].is<bool>()) flipDisplay = doc["flipDisplay"];
+  if (doc["twelveHourToggle"].is<bool>()) twelveHourToggle = doc["twelveHourToggle"];
+  if (doc["showDayOfWeek"].is<bool>()) showDayOfWeek = doc["showDayOfWeek"]; // <-- NEW
+  if (doc["showHumidity"].is<bool>()) showHumidity = doc["showHumidity"]; else showHumidity = false;
+  if (doc["ntpServer1"].is<const char*>()) strlcpy(ntpServer1, doc["ntpServer1"], sizeof(ntpServer1));
+  if (doc["ntpServer2"].is<const char*>()) strlcpy(ntpServer2, doc["ntpServer2"], sizeof(ntpServer2));
   if (strcmp(weatherUnits, "imperial") == 0)
     tempSymbol = 'F';
   else if (strcmp(weatherUnits, "standard") == 0)
@@ -247,7 +247,7 @@ void setupWebServer() {
       request->send(500, "application/json", "{\"error\":\"Failed to open config.json\"}");
       return;
     }
-    DynamicJsonDocument doc(2048);
+    JsonDocument doc;
     DeserializationError err = deserializeJson(doc, f);
     f.close();
     if (err) {
@@ -263,8 +263,8 @@ void setupWebServer() {
   });
   server.on("/save", HTTP_POST, [](AsyncWebServerRequest *request){
     Serial.println(F("[WEBSERVER] Request: /save"));    
-    DynamicJsonDocument doc(2048);
-    for (int i = 0; i < request->params(); i++) {
+    JsonDocument doc;
+    for (size_t i = 0; i < request->params(); i++) {
       const AsyncWebParameter* p = request->getParam(i);
       String n = p->name();
       String v = p->value();
@@ -281,7 +281,7 @@ void setupWebServer() {
     File f = LittleFS.open("/config.json", "w");
     if (!f) {
       Serial.println(F("[WEBSERVER] Failed to open /config.json for writing"));
-      DynamicJsonDocument errorDoc(256);
+      JsonDocument errorDoc;
       errorDoc[F("error")] = "Failed to write config";
       String response;
       serializeJson(errorDoc, response);
@@ -291,20 +291,20 @@ void setupWebServer() {
     serializeJson(doc, f);
     f.close();
     File verify = LittleFS.open("/config.json", "r");
-    DynamicJsonDocument test(2048);
+    JsonDocument test;
     DeserializationError err = deserializeJson(test, verify);
     verify.close();
     if (err) {
       Serial.print(F("[WEBSERVER] Config corrupted after save: "));
       Serial.println(err.f_str());
-      DynamicJsonDocument errorDoc(256);
+      JsonDocument errorDoc;
       errorDoc[F("error")] = "Config corrupted. Reboot cancelled.";
       String response;
       serializeJson(errorDoc, response);
       request->send(500, "application/json", response);
       return;
     }
-    DynamicJsonDocument okDoc(128);
+    JsonDocument okDoc;
     okDoc[F("message")] = "Saved successfully. Rebooting...";
     String response;
     serializeJson(okDoc, response);
@@ -322,7 +322,7 @@ void setupWebServer() {
       File src = LittleFS.open("/config.bak", "r");
       if (!src) {
         Serial.println(F("[WEBSERVER] Failed to open /config.bak"));
-        DynamicJsonDocument errorDoc(128);
+        JsonDocument errorDoc;
         errorDoc[F("error")] = "Failed to open backup file.";
         String response;
         serializeJson(errorDoc, response);
@@ -333,7 +333,7 @@ void setupWebServer() {
       if (!dst) {
         src.close();
         Serial.println(F("[WEBSERVER] Failed to open /config.json for writing"));
-        DynamicJsonDocument errorDoc(128);
+        JsonDocument errorDoc;
         errorDoc[F("error")] = "Failed to open config for writing.";
         String response;
         serializeJson(errorDoc, response);
@@ -347,7 +347,7 @@ void setupWebServer() {
       src.close();
       dst.close();
 
-      DynamicJsonDocument okDoc(128);
+      JsonDocument okDoc;
       okDoc[F("message")] = "✅ Backup restored! Device will now reboot.";
       String response;
       serializeJson(okDoc, response);
@@ -359,7 +359,7 @@ void setupWebServer() {
 
     } else {
       Serial.println(F("[WEBSERVER] No backup found"));
-      DynamicJsonDocument errorDoc(128);
+      JsonDocument errorDoc;
       errorDoc[F("error")] = "No backup found.";
       String response;
       serializeJson(errorDoc, response);
@@ -476,7 +476,7 @@ void fetchWeather() {
   Serial.println(F("[WEATHER] Response received."));
   Serial.println(F("[WEATHER] Payload: ") + payload);
 
-  DynamicJsonDocument doc(2048);
+  JsonDocument doc;
   DeserializationError error = deserializeJson(doc, payload);
   if (error) {
     Serial.print(F("[WEATHER] JSON parse error: "));
@@ -485,7 +485,7 @@ void fetchWeather() {
     return;
   }
 
-  if (doc.containsKey("main") && doc["main"].containsKey("temp")) {
+  if (doc["main"].is<JsonObject>() && doc["main"]["temp"].is<float>()) {
     float temp = doc["main"]["temp"];
     currentTemp = String((int)round(temp)) + "º";
     Serial.printf("[WEATHER] Temp: %s\n", currentTemp.c_str());
@@ -496,14 +496,14 @@ void fetchWeather() {
     return;
   }
 
-  if (doc.containsKey("main") && doc["main"].containsKey("humidity")) {
-  currentHumidity = doc["main"]["humidity"];
-  Serial.printf("[WEATHER] Humidity: %d%%\n", currentHumidity);
+  if (doc["main"].is<JsonObject>() && doc["main"]["humidity"].is<int>()) {
+    currentHumidity = doc["main"]["humidity"];
+    Serial.printf("[WEATHER] Humidity: %d%%\n", currentHumidity);
   } else {
     currentHumidity = -1;
   }
 
-  if (doc.containsKey("weather") && doc["weather"].is<JsonArray>() && doc["weather"][0].containsKey("main")) {
+  if (doc["weather"].is<JsonArray>() && doc["weather"][0]["main"].is<const char*>()) {
     const char* desc = doc["weather"][0]["main"];
     weatherDescription = String(desc);
     Serial.printf("[WEATHER] Description: %s\n", weatherDescription.c_str());
@@ -568,7 +568,7 @@ void loop() {
   static unsigned long ntpAnimTimer = 0;
   static int ntpAnimFrame = 0;
   static bool tzSetAfterSync = false;
-  static time_t lastPrint = 0;
+  
 
   // WEATHER FETCH
   static unsigned long lastFetch = 0;
@@ -589,7 +589,7 @@ void loop() {
         ntpSyncSuccessful = false;
         ntpState = NTP_FAILED;
       } else {
-        if (millis() - ntpStartTime > (ntpRetryCount * 1000)) {
+        if (millis() - ntpStartTime > (static_cast<unsigned long>(ntpRetryCount) * 1000)) {
           Serial.print(".");
           ntpRetryCount++;
         }
