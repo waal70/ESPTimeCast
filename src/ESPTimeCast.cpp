@@ -11,14 +11,14 @@
 #include <sntp.h>
 #include <time.h>
 
-#include "mfactoryfont.h"  // Replace with your font, or comment/remove if not using custom
-#include "tz_lookup.h" // Timezone lookup, do not duplicate mapping here!
+#include "mfactoryfont.h" // Replace with your font, or comment/remove if not using custom
+#include "tz_lookup.h"    // Timezone lookup, do not duplicate mapping here!
 
 #define HARDWARE_TYPE MD_MAX72XX::FC16_HW
 #define MAX_DEVICES 4
-#define CLK_PIN   5
-#define DATA_PIN  4
-#define CS_PIN    2
+#define CLK_PIN 5
+#define DATA_PIN 4
+#define CS_PIN 2
 MD_Parola P = MD_Parola(HARDWARE_TYPE, DATA_PIN, CLK_PIN, CS_PIN, MAX_DEVICES);
 
 AsyncWebServer server(80);
@@ -67,7 +67,8 @@ bool ntpSyncSuccessful = false;
 char daysOfTheWeek[7][12] = {"&", "*", "/", "?", "@", "=", "$"};
 
 // NTP Synchronization State Machine
-enum NtpState {
+enum NtpState
+{
   NTP_IDLE,
   NTP_SYNCING,
   NTP_SUCCESS,
@@ -82,36 +83,56 @@ int ntpRetryCount = 0;
 
 void performDoorbellAnimation();
 
-void printConfigToSerial() {
+void printConfigToSerial()
+{
   Serial.println(F("========= Loaded Configuration ========="));
-  Serial.print(F("WiFi SSID: ")); Serial.println(ssid);
-  Serial.print(F("WiFi Password: ")); Serial.println(password);
-  Serial.print(F("OpenWeather City: ")); Serial.println(openWeatherCity);
-  Serial.print(F("OpenWeather Country: ")); Serial.println(openWeatherCountry);
-  Serial.print(F("OpenWeather API Key: ")); Serial.println(openWeatherApiKey);
-  Serial.print(F("Temperature Unit: ")); Serial.println(weatherUnits);
-  Serial.print(F("Clock duration: ")); Serial.println(clockDuration);
-  Serial.print(F("Weather duration: ")); Serial.println(weatherDuration);
-  Serial.print(F("TimeZone (IANA): ")); Serial.println(timeZone);
-  Serial.print(F("Brightness: ")); Serial.println(brightness);
-  Serial.print(F("Flip Display: ")); Serial.println(flipDisplay ? "Yes" : "No");
-  Serial.print(F("Show 12h Clock: ")); Serial.println(twelveHourToggle ? "Yes" : "No");
-  Serial.print(F("Show Day of the Week: ")); Serial.println(showDayOfWeek ? "Yes" : "No");
-  Serial.print(F("Show Humidity ")); Serial.println(showHumidity ? "Yes" : "No");
-  Serial.print(F("NTP Server 1: ")); Serial.println(ntpServer1);
-  Serial.print(F("NTP Server 2: ")); Serial.println(ntpServer2);
+  Serial.print(F("WiFi SSID: "));
+  Serial.println(ssid);
+  Serial.print(F("WiFi Password: "));
+  Serial.println(password);
+  Serial.print(F("OpenWeather City: "));
+  Serial.println(openWeatherCity);
+  Serial.print(F("OpenWeather Country: "));
+  Serial.println(openWeatherCountry);
+  Serial.print(F("OpenWeather API Key: "));
+  Serial.println(openWeatherApiKey);
+  Serial.print(F("Temperature Unit: "));
+  Serial.println(weatherUnits);
+  Serial.print(F("Clock duration: "));
+  Serial.println(clockDuration);
+  Serial.print(F("Weather duration: "));
+  Serial.println(weatherDuration);
+  Serial.print(F("TimeZone (IANA): "));
+  Serial.println(timeZone);
+  Serial.print(F("Brightness: "));
+  Serial.println(brightness);
+  Serial.print(F("Flip Display: "));
+  Serial.println(flipDisplay ? "Yes" : "No");
+  Serial.print(F("Show 12h Clock: "));
+  Serial.println(twelveHourToggle ? "Yes" : "No");
+  Serial.print(F("Show Day of the Week: "));
+  Serial.println(showDayOfWeek ? "Yes" : "No");
+  Serial.print(F("Show Humidity "));
+  Serial.println(showHumidity ? "Yes" : "No");
+  Serial.print(F("NTP Server 1: "));
+  Serial.println(ntpServer1);
+  Serial.print(F("NTP Server 2: "));
+  Serial.println(ntpServer2);
   Serial.println(F("========================================"));
   Serial.println();
 }
 
-void loadConfig() {
+void loadConfig()
+{
   Serial.println(F("[CONFIG] Loading configuration..."));
-  if (!LittleFS.begin()) {
+  if (!LittleFS.begin())
+  {
     Serial.println(F("[ERROR] LittleFS mount failed"));
     return;
   }
 
-  if (!LittleFS.exists("/config.json")) {
+  if (!LittleFS.exists("/config.json"))
+  {
     Serial.println(F("[CONFIG] config.json not found, creating with defaults..."));
     JsonDocument doc;
     doc[F("ssid")] = "";
@@ -131,21 +152,26 @@ void loadConfig() {
     doc[F("ntpServer1")] = ntpServer1;
     doc[F("ntpServer2")] = ntpServer2;
     File f = LittleFS.open("/config.json", "w");
-    if (f) {
+    if (f)
+    {
       serializeJsonPretty(doc, f);
       f.close();
       Serial.println(F("[CONFIG] Default config.json created."));
-    } else {
+    }
+    else
+    {
       Serial.println(F("[ERROR] Failed to create default config.json"));
     }
   }
   File configFile = LittleFS.open("/config.json", "r");
-  if (!configFile) {
+  if (!configFile)
+  {
     Serial.println(F("[ERROR] Failed to open config.json"));
     return;
   }
   size_t size = configFile.size();
-  if (size == 0 || size > 1024) {
+  if (size == 0 || size > 1024)
+  {
     Serial.println(F("[ERROR] Invalid config file size"));
     configFile.close();
     return;
@@ -154,27 +180,46 @@ void loadConfig() {
   configFile.close();
   JsonDocument doc;
   DeserializationError error = deserializeJson(doc, jsonString);
-  if (error) {
+  if (error)
+  {
     Serial.print(F("[ERROR] JSON parse failed: "));
     Serial.println(error.f_str());
     return;
   }
-  if (doc["ssid"].is<const char*>()) strlcpy(ssid, doc["ssid"], sizeof(ssid));
-  if (doc["password"].is<const char*>()) strlcpy(password, doc["password"], sizeof(password));
-  if (doc["openWeatherApiKey"].is<const char*>()) strlcpy(openWeatherApiKey, doc["openWeatherApiKey"], sizeof(openWeatherApiKey));
-  if (doc["openWeatherCity"].is<const char*>()) strlcpy(openWeatherCity, doc["openWeatherCity"], sizeof(openWeatherCity));
-  if (doc["openWeatherCountry"].is<const char*>()) strlcpy(openWeatherCountry, doc["openWeatherCountry"], sizeof(openWeatherCountry));
-  if (doc["weatherUnits"].is<const char*>()) strlcpy(weatherUnits, doc["weatherUnits"], sizeof(weatherUnits));
-  if (doc["clockDuration"].is<unsigned long>()) clockDuration = doc["clockDuration"];
-  if (doc["weatherDuration"].is<unsigned long>()) weatherDuration = doc["weatherDuration"];
-  if (doc["timeZone"].is<const char*>()) strlcpy(timeZone, doc["timeZone"], sizeof(timeZone));
-  if (doc["brightness"].is<int>()) brightness = doc["brightness"];
-  if (doc["flipDisplay"].is<bool>()) flipDisplay = doc["flipDisplay"];
-  if (doc["twelveHourToggle"].is<bool>()) twelveHourToggle = doc["twelveHourToggle"];
-  if (doc["showDayOfWeek"].is<bool>()) showDayOfWeek = doc["showDayOfWeek"]; // <-- NEW
-  if (doc["showHumidity"].is<bool>()) showHumidity = doc["showHumidity"]; else showHumidity = false;
-  if (doc["ntpServer1"].is<const char*>()) strlcpy(ntpServer1, doc["ntpServer1"], sizeof(ntpServer1));
-  if (doc["ntpServer2"].is<const char*>()) strlcpy(ntpServer2, doc["ntpServer2"], sizeof(ntpServer2));
+  if (doc["ssid"].is<const char *>())
+    strlcpy(ssid, doc["ssid"], sizeof(ssid));
+  if (doc["password"].is<const char *>())
+    strlcpy(password, doc["password"], sizeof(password));
+  if (doc["openWeatherApiKey"].is<const char *>())
+    strlcpy(openWeatherApiKey, doc["openWeatherApiKey"], sizeof(openWeatherApiKey));
+  if (doc["openWeatherCity"].is<const char *>())
+    strlcpy(openWeatherCity, doc["openWeatherCity"], sizeof(openWeatherCity));
+  if (doc["openWeatherCountry"].is<const char *>())
+    strlcpy(openWeatherCountry, doc["openWeatherCountry"], sizeof(openWeatherCountry));
+  if (doc["weatherUnits"].is<const char *>())
+    strlcpy(weatherUnits, doc["weatherUnits"], sizeof(weatherUnits));
+  if (doc["clockDuration"].is<unsigned long>())
+    clockDuration = doc["clockDuration"];
+  if (doc["weatherDuration"].is<unsigned long>())
+    weatherDuration = doc["weatherDuration"];
+  if (doc["timeZone"].is<const char *>())
+    strlcpy(timeZone, doc["timeZone"], sizeof(timeZone));
+  if (doc["brightness"].is<int>())
+    brightness = doc["brightness"];
+  if (doc["flipDisplay"].is<bool>())
+    flipDisplay = doc["flipDisplay"];
+  if (doc["twelveHourToggle"].is<bool>())
+    twelveHourToggle = doc["twelveHourToggle"];
+  if (doc["showDayOfWeek"].is<bool>())
+    showDayOfWeek = doc["showDayOfWeek"]; // <-- NEW
+  if (doc["showHumidity"].is<bool>())
+    showHumidity = doc["showHumidity"];
+  else
+    showHumidity = false;
+  if (doc["ntpServer1"].is<const char *>())
+    strlcpy(ntpServer1, doc["ntpServer1"], sizeof(ntpServer1));
+  if (doc["ntpServer2"].is<const char *>())
+    strlcpy(ntpServer2, doc["ntpServer2"], sizeof(ntpServer2));
   if (strcmp(weatherUnits, "imperial") == 0)
     tempSymbol = 'F';
   else if (strcmp(weatherUnits, "standard") == 0)
@@ -184,7 +229,8 @@ void loadConfig() {
   Serial.println(F("[CONFIG] Configuration loaded."));
 }
 
-void connectWiFi() {
+void connectWiFi()
+{
   Serial.println(F("[WIFI] Connecting to WiFi..."));
   WiFi.disconnect(true);
   delay(100);
@@ -194,14 +240,18 @@ void connectWiFi() {
   unsigned long animTimer = 0;
   int animFrame = 0;
   bool animating = true;
-  while (animating) {
+  while (animating)
+  {
     unsigned long now = millis();
-    if (WiFi.status() == WL_CONNECTED) {
+    if (WiFi.status() == WL_CONNECTED)
+    {
       Serial.println(F("[WiFi] Connected: ") + WiFi.localIP().toString());
       isAPMode = false;
       animating = false;
       break;
-    } else if (now - startAttemptTime >= timeout) {
+    }
+    else if (now - startAttemptTime >= timeout)
+    {
       Serial.println(F("\r\n[WiFi] Failed. Starting AP mode..."));
       WiFi.softAP("ESPTimeCast", "12345678");
       Serial.print(F("AP IP address: "));
@@ -212,13 +262,21 @@ void connectWiFi() {
       Serial.println(F("[WIFI] AP Mode Started"));
       break;
     }
-    if (now - animTimer > 750) {
+    if (now - animTimer > 750)
+    {
       animTimer = now;
       P.setTextAlignment(PA_CENTER);
-      switch (animFrame % 3) {
-        case 0: P.print("WiFi©"); break;
-        case 1: P.print("WiFiª"); break;
-        case 2: P.print("WiFi«"); break;
+      switch (animFrame % 3)
+      {
+      case 0:
+        P.print("WiFi©");
+        break;
+      case 1:
+        P.print("WiFiª");
+        break;
+      case 2:
+        P.print("WiFi«");
+        break;
       }
       animFrame++;
     }
@@ -226,7 +284,8 @@ void connectWiFi() {
   }
 }
 
-void setupTime() {
+void setupTime()
+{
   sntp_stop();
   Serial.println(F("[TIME] Starting NTP sync..."));
   configTime(0, 0, ntpServer1, ntpServer2); // Use custom NTP servers
@@ -238,13 +297,15 @@ void setupTime() {
   ntpSyncSuccessful = false; // Reset the flag
 }
 
-void setupWebServer() {
+void setupWebServer()
+{
   Serial.println(F("[WEBSERVER] Setting up web server..."));
-  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
+            {
     Serial.println(F("[WEBSERVER] Request: /"));
-    request->send(LittleFS, "/index.html", "text/html");
-  });
-  server.on("/config.json", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(LittleFS, "/index.html", "text/html"); });
+  server.on("/config.json", HTTP_GET, [](AsyncWebServerRequest *request)
+            {
     Serial.println(F("[WEBSERVER] Request: /config.json"));
     File f = LittleFS.open("/config.json", "r");
     if (!f) {
@@ -264,9 +325,9 @@ void setupWebServer() {
     doc[F("mode")] = isAPMode ? "ap" : "sta";
     String response;
     serializeJson(doc, response);
-    request->send(200, "application/json", response);
-  });
-  server.on("/save", HTTP_POST, [](AsyncWebServerRequest *request){
+    request->send(200, "application/json", response); });
+  server.on("/save", HTTP_POST, [](AsyncWebServerRequest *request)
+            {
     Serial.println(F("[WEBSERVER] Request: /save"));    
     JsonDocument doc;
     for (size_t i = 0; i < request->params(); i++) {
@@ -318,10 +379,10 @@ void setupWebServer() {
     request->onDisconnect([]() {
       Serial.println(F("[WEBSERVER] Rebooting..."));
       ESP.restart();
-    });
-  });
+    }); });
 
-  server.on("/restore", HTTP_POST, [](AsyncWebServerRequest *request){
+  server.on("/restore", HTTP_POST, [](AsyncWebServerRequest *request)
+            {
     Serial.println(F("[WEBSERVER] Request: /restore"));
     if (LittleFS.exists("/config.bak")) {
       File src = LittleFS.open("/config.bak", "r");
@@ -369,36 +430,37 @@ void setupWebServer() {
       String response;
       serializeJson(errorDoc, response);
       request->send(404, "application/json", response);
-    }
-  });
+    } });
 
-  server.on("/ap_status", HTTP_GET, [](AsyncWebServerRequest *request){
+  server.on("/ap_status", HTTP_GET, [](AsyncWebServerRequest *request)
+            {
     Serial.print(F("[WEBSERVER] Request: /ap_status. isAPMode = "));
     Serial.println(isAPMode);
     String json = "{\"isAP\": ";
     json += (isAPMode) ? "true" : "false";
     json += "}";
-    request->send(200, "application/json", json);
-  });
+    request->send(200, "application/json", json); });
 
   /// Andre: add webhook for doorbell. The doorbell will send a POST request to this endpoint
-  server.on("/doorbell", HTTP_POST, [](AsyncWebServerRequest *request){
+  server.on("/doorbell", HTTP_POST, [](AsyncWebServerRequest *request)
+            {
     Serial.println(F("[WEBSERVER] Doorbell POST request received"));
     // Here you can handle the doorbell event, e.g., play a sound or log it
     
     P.displayText("De bel!", PA_CENTER, 1000, 0, PA_PRINT, PA_NO_EFFECT);
     DOORBELL_EVENT = 1; // Call your doorbell animation function
-    request->send(200, "text/plain", "Doorbell event received");
-  });
+    request->send(200, "text/plain", "Doorbell event received"); });
 
   server.begin();
   Serial.println(F("[WEBSERVER] Web server started"));
 }
 
-void performDoorbellAnimation() {
+void performDoorbellAnimation()
+{
   Serial.println(F("[ANIMATION] Performing doorbell animation..."));
-  
-  for (int i = 0; i < 20; i++) {
+
+  for (int i = 0; i < 20; i++)
+  {
     P.displayClear();
     P.setInvert(true);
     P.print("DE BEL!");
@@ -416,38 +478,44 @@ void performDoorbellAnimation() {
   lastSwitch = millis();
 }
 
-void fetchWeather() {
+void fetchWeather()
+{
   Serial.println(F("[WEATHER] Fetching weather data..."));
-  if (WiFi.status() != WL_CONNECTED) {
+  if (WiFi.status() != WL_CONNECTED)
+  {
     Serial.println(F("[WEATHER] Skipped: WiFi not connected"));
     weatherAvailable = false;
     weatherFetched = false;
     return;
   }
-  if (!openWeatherApiKey || strlen(openWeatherApiKey) != 32) {
+  if (!openWeatherApiKey || strlen(openWeatherApiKey) != 32)
+  {
     Serial.println(F("[WEATHER] Skipped: Invalid API key (must be exactly 32 characters)"));
     weatherAvailable = false;
     weatherFetched = false;
     return;
   }
-  if (!(strlen(openWeatherCity) > 0 && strlen(openWeatherCountry) > 0)) {
+  if (!(strlen(openWeatherCity) > 0 && strlen(openWeatherCountry) > 0))
+  {
     Serial.println(F("[WEATHER] Skipped: City or Country is empty."));
     return;
   }
 
   Serial.println(F("[WEATHER] Connecting to OpenWeatherMap..."));
-  const char* host = "api.openweathermap.org";
+  const char *host = "api.openweathermap.org";
   String url = "/data/2.5/weather?q=" + String(openWeatherCity) + "," + String(openWeatherCountry) + "&appid=" + openWeatherApiKey + "&units=" + String(weatherUnits);
   Serial.println(F("[WEATHER] URL: ") + url);
 
   IPAddress ip;
-  if (!WiFi.hostByName(host, ip)) {
+  if (!WiFi.hostByName(host, ip))
+  {
     Serial.println(F("[WEATHER] DNS lookup failed!"));
     weatherAvailable = false;
     return;
   }
 
-  if (!client.connect(host, 80)) {
+  if (!client.connect(host, 80))
+  {
     Serial.println(F("[WEATHER] Connection failed"));
     weatherAvailable = false;
     return;
@@ -458,7 +526,8 @@ void fetchWeather() {
                    "Host: " + host + "\r\n" +
                    "Connection: close\r\n\r\n";
 
-  if (!client.print(request)) {
+  if (!client.print(request))
+  {
     Serial.println(F("[WEATHER] Failed to send request!"));
     client.stop();
     weatherAvailable = false;
@@ -475,13 +544,17 @@ void fetchWeather() {
   // Read headers and then the entire body at once
   while ((client.connected() || client.available()) &&
          millis() - weatherStart < weatherTimeout &&
-         WiFi.status() == WL_CONNECTED) {
+         WiFi.status() == WL_CONNECTED)
+  {
     line = client.readStringUntil('\n');
-    if (line.length() == 0) continue;
+    if (line.length() == 0)
+      continue;
 
-    if (line.startsWith("HTTP/1.1")) {
+    if (line.startsWith("HTTP/1.1"))
+    {
       int statusCode = line.substring(9, 12).toInt();
-      if (statusCode != 200) {
+      if (statusCode != 200)
+      {
         Serial.print(F("[WEATHER] HTTP error: "));
         Serial.println(statusCode);
         client.stop();
@@ -490,10 +563,12 @@ void fetchWeather() {
       }
     }
 
-    if (!isBody && line == "\r") {
+    if (!isBody && line == "\r")
+    {
       isBody = true;
       // Read the entire body at once
-      while (client.available()) {
+      while (client.available())
+      {
         payload += (char)client.read();
       }
       break; // All done!
@@ -503,7 +578,8 @@ void fetchWeather() {
   }
   client.stop();
 
-  if (millis() - weatherStart >= weatherTimeout) {
+  if (millis() - weatherStart >= weatherTimeout)
+  {
     Serial.println(F("[WEATHER] ERROR: Weather fetch timed out!"));
     weatherAvailable = false;
     return;
@@ -514,64 +590,78 @@ void fetchWeather() {
 
   JsonDocument doc;
   DeserializationError error = deserializeJson(doc, payload);
-  if (error) {
+  if (error)
+  {
     Serial.print(F("[WEATHER] JSON parse error: "));
     Serial.println(error.f_str());
     weatherAvailable = false;
     return;
   }
 
-  if (doc["main"].is<JsonObject>() && doc["main"]["temp"].is<float>()) {
+  if (doc["main"].is<JsonObject>() && doc["main"]["temp"].is<float>())
+  {
     float temp = doc["main"]["temp"];
     currentTemp = String((int)round(temp)) + "º";
     Serial.printf("[WEATHER] Temp: %s\n", currentTemp.c_str());
     weatherAvailable = true;
-  } else {
+  }
+  else
+  {
     Serial.println(F("[WEATHER] Temperature not found in JSON payload"));
     weatherAvailable = false;
     return;
   }
 
-  if (doc["main"].is<JsonObject>() && doc["main"]["humidity"].is<int>()) {
+  if (doc["main"].is<JsonObject>() && doc["main"]["humidity"].is<int>())
+  {
     currentHumidity = doc["main"]["humidity"];
     Serial.printf("[WEATHER] Humidity: %d%%\n", currentHumidity);
-  } else {
+  }
+  else
+  {
     currentHumidity = -1;
   }
 
-  if (doc["weather"].is<JsonArray>() && doc["weather"][0]["main"].is<const char*>()) {
-    const char* desc = doc["weather"][0]["main"];
+  if (doc["weather"].is<JsonArray>() && doc["weather"][0]["main"].is<const char *>())
+  {
+    const char *desc = doc["weather"][0]["main"];
     weatherDescription = String(desc);
     Serial.printf("[WEATHER] Description: %s\n", weatherDescription.c_str());
-  } else {
+  }
+  else
+  {
     Serial.println(F("[WEATHER] Weather description not found in JSON payload"));
   }
 
-    if (doc["main"].is<JsonObject>() && doc["main"]["pressure"].is<int>()) {
+  if (doc["main"].is<JsonObject>() && doc["main"]["pressure"].is<int>())
+  {
     currentPressure = doc["main"]["pressure"];
     Serial.printf("[WEATHER] Pressure: %d hPa\n", currentPressure);
-  } else {
+  }
+  else
+  {
     currentPressure = -1;
   }
-  
+
   weatherFetched = true;
 }
 
-void setup() {
+void setup()
+{
   Serial.begin(74880);
   Serial.println();
   Serial.println(F("[SETUP] Starting setup..."));
   P.begin();
   P.setFont(mFactory); // Custom font
-  loadConfig(); // Load config before setting intensity & flip
+  loadConfig();        // Load config before setting intensity & flip
   P.setIntensity(brightness);
   P.setZoneEffect(0, flipDisplay, PA_FLIP_UD);
   P.setZoneEffect(0, flipDisplay, PA_FLIP_LR);
   Serial.println(F("[SETUP] Parola (LED Matrix) initialized"));
   connectWiFi();
-  Serial.println(F("[SETUP] Wifi connected"));  
+  Serial.println(F("[SETUP] Wifi connected"));
   setupWebServer();
-  Serial.println(F("[SETUP] Webserver setup complete"));  
+  Serial.println(F("[SETUP] Webserver setup complete"));
   Serial.println(F("[SETUP] Setup complete"));
   Serial.println();
   printConfigToSerial();
@@ -581,25 +671,36 @@ void setup() {
   lastColonBlink = millis();
 }
 
-void loop() {
-  if (DOORBELL_EVENT == 1) {
+void loop()
+{
+  if (DOORBELL_EVENT == 1)
+  {
     performDoorbellAnimation();
     DOORBELL_EVENT = 0; // Reset the event
   }
   // --- AP Mode Animation ---
   static unsigned long apAnimTimer = 0;
   static int apAnimFrame = 0;
-  if (isAPMode) {
+  if (isAPMode)
+  {
     unsigned long now = millis();
-    if (now - apAnimTimer > 750) {
+    if (now - apAnimTimer > 750)
+    {
       apAnimTimer = now;
       apAnimFrame++;
     }
     P.setTextAlignment(PA_CENTER);
-    switch (apAnimFrame % 3) {
-      case 0: P.print("AP©"); break;
-      case 1: P.print("APª"); break;
-      case 2: P.print("AP«"); break;
+    switch (apAnimFrame % 3)
+    {
+    case 0:
+      P.print("AP©");
+      break;
+    case 1:
+      P.print("APª");
+      break;
+    case 2:
+      P.print("AP«");
+      break;
     }
     yield(); // Let system do background work
     return;  // Don't run normal display logic
@@ -607,7 +708,8 @@ void loop() {
 
   static bool colonVisible = true;
   const unsigned long colonBlinkInterval = 800;
-  if (millis() - lastColonBlink > colonBlinkInterval) {
+  if (millis() - lastColonBlink > colonBlinkInterval)
+  {
     colonVisible = !colonVisible;
     lastColonBlink = millis();
   }
@@ -615,63 +717,76 @@ void loop() {
   static unsigned long ntpAnimTimer = 0;
   static int ntpAnimFrame = 0;
   static bool tzSetAfterSync = false;
-  
 
   // WEATHER FETCH
   static unsigned long lastFetch = 0;
   const unsigned long fetchInterval = 900000; // 15 minutes
 
   // NTP state machine
-  switch (ntpState) {
-    case NTP_IDLE:
-      break;
-    case NTP_SYNCING: {
-      time_t now = time(nullptr);
-      if (now > 1000) {
-        Serial.println(F("\n[TIME] NTP sync successful."));
-        ntpSyncSuccessful = true;
-        ntpState = NTP_SUCCESS;
-      } else if (millis() - ntpStartTime > ntpTimeout || ntpRetryCount > maxNtpRetries) {
-        Serial.println(F("\n[TIME] NTP sync failed."));
-        ntpSyncSuccessful = false;
-        ntpState = NTP_FAILED;
-      } else {
-        if (millis() - ntpStartTime > (static_cast<unsigned long>(ntpRetryCount) * 1000)) {
-          Serial.print(".");
-          ntpRetryCount++;
-        }
-      }
-      break;
+  switch (ntpState)
+  {
+  case NTP_IDLE:
+    break;
+  case NTP_SYNCING:
+  {
+    time_t now = time(nullptr);
+    if (now > 1000)
+    {
+      Serial.println(F("\n[TIME] NTP sync successful."));
+      ntpSyncSuccessful = true;
+      ntpState = NTP_SUCCESS;
     }
-    case NTP_SUCCESS:
-      if (!tzSetAfterSync) {
-        const char* posixTz = ianaToPosix(timeZone);
-        setenv("TZ", posixTz, 1);
-        tzset();
-        tzSetAfterSync = true;
+    else if (millis() - ntpStartTime > ntpTimeout || ntpRetryCount > maxNtpRetries)
+    {
+      Serial.println(F("\n[TIME] NTP sync failed."));
+      ntpSyncSuccessful = false;
+      ntpState = NTP_FAILED;
+    }
+    else
+    {
+      if (millis() - ntpStartTime > (static_cast<unsigned long>(ntpRetryCount) * 1000))
+      {
+        Serial.print(".");
+        ntpRetryCount++;
       }
-      ntpAnimTimer = 0;
-      ntpAnimFrame = 0;
-      break;
-    case NTP_FAILED:
-      ntpAnimTimer = 0;
-      ntpAnimFrame = 0;
-      break;
+    }
+    break;
   }
-  
-  if (WiFi.status() == WL_CONNECTED) {
-    if (!weatherFetchInitiated) {
-        weatherFetchInitiated = true;
-        fetchWeather();
-        lastFetch = millis();
+  case NTP_SUCCESS:
+    if (!tzSetAfterSync)
+    {
+      const char *posixTz = ianaToPosix(timeZone);
+      setenv("TZ", posixTz, 1);
+      tzset();
+      tzSetAfterSync = true;
     }
-    if (millis() - lastFetch > fetchInterval) {
-        Serial.println(F("[LOOP] Fetching weather data..."));
-        weatherFetched = false;
-        fetchWeather();
-        lastFetch = millis();
+    ntpAnimTimer = 0;
+    ntpAnimFrame = 0;
+    break;
+  case NTP_FAILED:
+    ntpAnimTimer = 0;
+    ntpAnimFrame = 0;
+    break;
+  }
+
+  if (WiFi.status() == WL_CONNECTED)
+  {
+    if (!weatherFetchInitiated)
+    {
+      weatherFetchInitiated = true;
+      fetchWeather();
+      lastFetch = millis();
     }
-  } else {
+    if (millis() - lastFetch > fetchInterval)
+    {
+      Serial.println(F("[LOOP] Fetching weather data..."));
+      weatherFetched = false;
+      fetchWeather();
+      lastFetch = millis();
+    }
+  }
+  else
+  {
     weatherFetchInitiated = false;
   }
 
@@ -681,27 +796,35 @@ void loop() {
   localtime_r(&now, &timeinfo);
 
   int dayOfWeek = timeinfo.tm_wday;
-  char* daySymbol = daysOfTheWeek[dayOfWeek];
+  char *daySymbol = daysOfTheWeek[dayOfWeek];
 
   char timeStr[9]; // enough for "12:34 AM"
-  if (twelveHourToggle) {
+  if (twelveHourToggle)
+  {
     int hour12 = timeinfo.tm_hour % 12;
-    if (hour12 == 0) hour12 = 12;
+    if (hour12 == 0)
+      hour12 = 12;
     sprintf(timeStr, "%d:%02d", hour12, timeinfo.tm_min);
-  } else {
+  }
+  else
+  {
     sprintf(timeStr, "%02d:%02d", timeinfo.tm_hour, timeinfo.tm_min);
   }
 
   // Only prepend day symbol if showDayOfWeek is true
   String formattedTime;
-  if (showDayOfWeek) {
+  if (showDayOfWeek)
+  {
     formattedTime = String(daySymbol) + " " + String(timeStr);
-  } else {
+  }
+  else
+  {
     formattedTime = String(timeStr);
   }
 
   unsigned long displayDuration = (displayMode == 0) ? clockDuration : weatherDuration;
-  if (millis() - lastSwitch > displayDuration) {
+  if (millis() - lastSwitch > displayDuration)
+  {
     displayMode++;
     displayMode = displayMode % 3;
     lastSwitch = millis();
@@ -711,57 +834,92 @@ void loop() {
   P.setTextAlignment(PA_CENTER);
   static bool weatherWasAvailable = false;
 
-  if (displayMode == 0) { // Clock
-    if (ntpState == NTP_SYNCING) {
-      if (millis() - ntpAnimTimer > 750) {
+  if (displayMode == 0)
+  { // Clock
+    if (ntpState == NTP_SYNCING)
+    {
+      if (millis() - ntpAnimTimer > 750)
+      {
         ntpAnimTimer = millis();
-        switch (ntpAnimFrame % 3) {
-          case 0: P.print("sync®"); break;
-          case 1: P.print("sync¯"); break;
-          case 2: P.print("sync°"); break;
+        switch (ntpAnimFrame % 3)
+        {
+        case 0:
+          P.print("sync®");
+          break;
+        case 1:
+          P.print("sync¯");
+          break;
+        case 2:
+          P.print("sync°");
+          break;
         }
         ntpAnimFrame++;
       }
-    } else if (!ntpSyncSuccessful) {
+    }
+    else if (!ntpSyncSuccessful)
+    {
       P.print("no ntp");
-    } else {
+    }
+    else
+    {
       String timeString = formattedTime;
-      if (!colonVisible) timeString.replace(":", " ");
+      if (!colonVisible)
+        timeString.replace(":", " ");
       P.print(timeString);
     }
-  } else if (displayMode == 1) { // Weather screen 1mode
-    if (weatherAvailable) {
+  }
+  else if (displayMode == 1)
+  { // Weather screen 1mode
+    if (weatherAvailable)
+    {
       // --- Weather display string with humidity toggle and 99% cap ---
       String weatherDisplay;
-      if (showHumidity && currentHumidity != -1) {
+      if (showHumidity && currentHumidity != -1)
+      {
         int cappedHumidity = (currentHumidity > 99) ? 99 : currentHumidity;
         weatherDisplay = currentTemp + " " + String(cappedHumidity) + "%";
-      } else {
+      }
+      else
+      {
         weatherDisplay = currentTemp + tempSymbol;
       }
       P.print(weatherDisplay.c_str());
       weatherWasAvailable = true;
-    } } else if (displayMode == 2) { // Weather screen 2 mode
-      if (weatherAvailable) {
+    }
+  }
+  else if (displayMode == 2)
+  { // Weather screen 2 mode
+    if (weatherAvailable)
+    {
       // --- Weather display string with pressure ---
       String weatherDisplay = "";
-      if (currentPressure != -1) {
-         weatherDisplay = String(currentPressure) + " hPa";
-      } else {
+      if (currentPressure != -1)
+      {
+        weatherDisplay = String(currentPressure) + " hPa";
+      }
+      else
+      {
         weatherDisplay = " ??? hPa";
       }
       P.print(weatherDisplay.c_str());
       weatherWasAvailable = true;
-    } else {
-      if (weatherWasAvailable) {
+    }
+    else
+    {
+      if (weatherWasAvailable)
+      {
         Serial.println(F("[DISPLAY] Weather not available, showing clock..."));
         weatherWasAvailable = false;
       }
-      if (ntpSyncSuccessful) {
+      if (ntpSyncSuccessful)
+      {
         String timeString = formattedTime;
-        if (!colonVisible) timeString.replace(":", " ");
+        if (!colonVisible)
+          timeString.replace(":", " ");
         P.print(timeString);
-      } else {
+      }
+      else
+      {
         P.print("no temp");
       }
     }
@@ -769,7 +927,8 @@ void loop() {
 
   static unsigned long lastDisplayUpdate = 0;
   const unsigned long displayUpdateInterval = 50;
-  if (millis() - lastDisplayUpdate >= displayUpdateInterval) {
+  if (millis() - lastDisplayUpdate >= displayUpdateInterval)
+  {
     lastDisplayUpdate = millis();
   }
 

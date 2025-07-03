@@ -1,9 +1,10 @@
 #ifndef TZ_LOOKUP_H
 #define TZ_LOOKUP_H
 
-typedef struct {
-    const char* iana;
-    const char* posix;
+typedef struct
+{
+    const char *iana;
+    const char *posix;
 } TimeZoneMapping;
 
 const TimeZoneMapping tz_mappings[] = {
@@ -93,13 +94,14 @@ const TimeZoneMapping tz_mappings[] = {
     {"America/Lima", "PET5"},
     {"America/Santiago", "CLST4CLT,M9.1.1,M4.2.7"},
     {"America/Argentina/Buenos_Aires", "ART3"},
-    {"America/Sao_Paulo", "BRT3BRST,M10.3.0/0,M2.3.0/0"}
-};
+    {"America/Sao_Paulo", "BRT3BRST,M10.3.0/0,M2.3.0/0"}};
 
-#define TZ_MAPPINGS_COUNT (sizeof(tz_mappings)/sizeof(tz_mappings[0]))
+#define TZ_MAPPINGS_COUNT (sizeof(tz_mappings) / sizeof(tz_mappings[0]))
 
-inline const char* ianaToPosix(const char* iana) {
-    for (size_t i = 0; i < TZ_MAPPINGS_COUNT; i++) {
+inline const char *ianaToPosix(const char *iana)
+{
+    for (size_t i = 0; i < TZ_MAPPINGS_COUNT; i++)
+    {
         if (strcmp(iana, tz_mappings[i].iana) == 0)
             return tz_mappings[i].posix;
     }
