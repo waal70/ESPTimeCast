@@ -23,6 +23,10 @@ MD_Parola P = MD_Parola(HARDWARE_TYPE, DATA_PIN, CLK_PIN, CS_PIN, MAX_DEVICES);
 
 AsyncWebServer server(80);
 
+// TODO: Make the doorbell event configurable via web interface (time of event, text to display)
+// int doorbellDuration = 10; // Duration of doorbell animation in seconds
+// char doorbellText[8] = "DE BEL!";
+
 char ssid[32] = "";
 char password[32] = "";
 char openWeatherApiKey[64] = "";
