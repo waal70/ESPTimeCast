@@ -33,6 +33,8 @@ char timeZone[64] = "";
 unsigned long clockDuration = 10000;
 unsigned long weatherDuration = 5000;
 
+int DOORBELL_EVENT = 0;
+
 // ADVANCED SETTINGS
 int brightness = 7;
 bool flipDisplay = false;
@@ -77,6 +79,8 @@ unsigned long ntpStartTime = 0;
 const int ntpTimeout = 30000; // 30 seconds
 const int maxNtpRetries = 30;
 int ntpRetryCount = 0;
+
+void performDoorbellAnimation();
 
 void printConfigToSerial() {
   Serial.println(F("========= Loaded Configuration ========="));
@@ -377,8 +381,39 @@ void setupWebServer() {
     request->send(200, "application/json", json);
   });
 
+  /// Andre: add webhook for doorbell. The doorbell will send a POST request to this endpoint
+  server.on("/doorbell", HTTP_POST, [](AsyncWebServerRequest *request){
+    Serial.println(F("[WEBSERVER] Doorbell POST request received"));
+    // Here you can handle the doorbell event, e.g., play a sound or log it
+    
+    P.displayText("De bel!", PA_CENTER, 1000, 0, PA_PRINT, PA_NO_EFFECT);
+    DOORBELL_EVENT = 1; // Call your doorbell animation function
+    request->send(200, "text/plain", "Doorbell event received");
+  });
+
   server.begin();
   Serial.println(F("[WEBSERVER] Web server started"));
+}
+
+void performDoorbellAnimation() {
+  Serial.println(F("[ANIMATION] Performing doorbell animation..."));
+  
+  for (int i = 0; i < 20; i++) {
+    P.displayClear();
+    P.setInvert(true);
+    P.print("DE BEL!");
+    delay(500);
+    P.displayClear();
+    P.setInvert(false);
+    P.print("DE BEL!");
+    delay(500);
+  }
+  P.setFont(mFactory); // Custom font
+  P.setInvert(false);
+  P.displayClear();
+
+  displayMode = 0; // Reset display mode after doorbell animation
+  lastSwitch = millis();
 }
 
 void fetchWeather() {
@@ -547,7 +582,10 @@ void setup() {
 }
 
 void loop() {
-
+  if (DOORBELL_EVENT == 1) {
+    performDoorbellAnimation();
+    DOORBELL_EVENT = 0; // Reset the event
+  }
   // --- AP Mode Animation ---
   static unsigned long apAnimTimer = 0;
   static int apAnimFrame = 0;
