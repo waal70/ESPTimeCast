@@ -13,6 +13,7 @@
 
 #include "mfactoryfont.h" // Replace with your font, or comment/remove if not using custom
 #include "tz_lookup.h"    // Timezone lookup, do not duplicate mapping here!
+#include "weather_icons.h" // Weather icons, do not duplicate mapping here!
 
 #define HARDWARE_TYPE MD_MAX72XX::FC16_HW
 #define MAX_DEVICES 4
@@ -53,7 +54,6 @@ const byte DNS_PORT = 53;
 DNSServer dnsServer;
 
 String currentTemp = "";
-String weatherDescription = "";
 bool weatherAvailable = false;
 bool weatherFetched = false;
 bool weatherFetchInitiated = false;
@@ -65,6 +65,7 @@ unsigned long lastColonBlink = 0;
 int displayMode = 0;
 int currentHumidity = -1;
 int currentPressure = -1; // New variable for pressure
+uint8_t currentWeatherIcon[8]; // Placeholder for current weather icon
 
 bool ntpSyncSuccessful = false;
 
@@ -482,6 +483,22 @@ void performDoorbellAnimation()
   lastSwitch = millis();
 }
 
+uint8_t* getWeatherIcon(const char *iconId)
+{
+  for (int i = 0; i < sizeof(APIData) / sizeof(APIData[0]); i++)
+  {
+    if (strcmp(APIData[i].id, iconId) == 0)
+    {
+      memcpy(currentWeatherIcon, APIData[i].name, sizeof(currentWeatherIcon));
+      Serial.printf("[WEATHER] Icon found: %s\n", APIData[i].id);
+      return currentWeatherIcon;
+    }
+  }
+  Serial.println(F("[WEATHER] Icon not found"));
+  memset(currentWeatherIcon, 0, sizeof(currentWeatherIcon)); // Clear icon if not found
+  return nullptr; // Return null if icon not found
+}
+
 void fetchWeather()
 {
   Serial.println(F("[WEATHER] Fetching weather data..."));
@@ -626,15 +643,15 @@ void fetchWeather()
     currentHumidity = -1;
   }
 
-  if (doc["weather"].is<JsonArray>() && doc["weather"][0]["main"].is<const char *>())
+  if (doc["weather"].is<JsonArray>() && doc["weather"][0]["icon"].is<const char *>())
   {
-    const char *desc = doc["weather"][0]["main"];
-    weatherDescription = String(desc);
-    Serial.printf("[WEATHER] Description: %s\n", weatherDescription.c_str());
+    const char *icon = doc["weather"][0]["icon"];
+    uint8_t* iconData = getWeatherIcon(icon);
+    Serial.printf("[WEATHER] Icon: %s\n", icon);
   }
   else
   {
-    Serial.println(F("[WEATHER] Weather description not found in JSON payload"));
+    Serial.println(F("[WEATHER] Weather icon not found in JSON payload"));
   }
 
   if (doc["main"].is<JsonObject>() && doc["main"]["pressure"].is<int>())

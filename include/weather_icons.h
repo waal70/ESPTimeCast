@@ -3,8 +3,7 @@
 
 // https://xantorohara.github.io/led-matrix-editor/#894218a425184291|09080d7a8a9d7809|405ea12939ce2023|00007e818999710e|152a547e8191710e|152a547e8191710e|0a04087e8191710e|00ff003e00fc003f|a5429924249942a5
 
-const uint8_t IMAGES[][9] = {
-{ // Clear sky - 01d
+const uint8_t CLEAR[8] = {
   0b10001001,
   0b01000010,
   0b00011000,
@@ -13,7 +12,9 @@ const uint8_t IMAGES[][9] = {
   0b00011000,
   0b01000010,
   0b10010001
-},{ // few clouds - 02d
+};
+
+const uint8_t FEW_CLOUDS[8] = {
   0b10010000,
   0b00011110,
   0b10111001,
@@ -22,7 +23,9 @@ const uint8_t IMAGES[][9] = {
   0b10110000,
   0b00010000,
   0b10010000
-},{ // scattered clouds - 03d
+};
+
+const uint8_t SCATTERED_CLOUDS[8] = {
   0b11000100,
   0b00000100,
   0b01110011,
@@ -31,7 +34,9 @@ const uint8_t IMAGES[][9] = {
   0b10000101,
   0b01111010,
   0b00000010
-},{ // broken clouds - 04d
+};
+
+const uint8_t BROKEN_CLOUDS[8] = {
   0b01110000,
   0b10001110,
   0b10011001,
@@ -40,7 +45,9 @@ const uint8_t IMAGES[][9] = {
   0b01111110,
   0b00000000,
   0b00000000
-},{ // shower rain - 09d
+};
+
+const uint8_t SHOWER_RAIN[8] = {
   0b01110000,
   0b10001110,
   0b10001001,
@@ -49,7 +56,9 @@ const uint8_t IMAGES[][9] = {
   0b00101010,
   0b01010100,
   0b10101000
-},{ // rain - 10d
+};
+
+const uint8_t RAIN[8] = {
   0b01110000,
   0b10001110,
   0b10001001,
@@ -58,7 +67,9 @@ const uint8_t IMAGES[][9] = {
   0b00101010,
   0b01010100,
   0b10101000
-},{ // thunderstorm - 11d
+};
+
+const uint8_t THUNDERSTORM[8] = {
   0b01110000,
   0b10001110,
   0b10001001,
@@ -67,7 +78,9 @@ const uint8_t IMAGES[][9] = {
   0b00010000,
   0b00100000,
   0b01010000
-},{ // mist - 50d
+};
+
+const uint8_t MIST[8] = {
   0b11111100,
   0b00000000,
   0b00111111,
@@ -76,7 +89,9 @@ const uint8_t IMAGES[][9] = {
   0b00000000,
   0b11111111,
   0b00000000
-},{ // snow - 13d
+};
+
+const uint8_t SNOW[8] = {
   0b10100101,
   0b01000010,
   0b10011001,
@@ -85,36 +100,35 @@ const uint8_t IMAGES[][9] = {
   0b10011001,
   0b01000010,
   0b10100101
-}};
-const int IMAGES_LEN = sizeof(IMAGES)/9;
+};
 
 // Example response from OpenWeatherMap API:
 // see example.json
 
 typedef struct {
   char id[4];
-  char name[64];
+  const uint8_t * name[8];
 } weatherIcon;
 
 weatherIcon APIData[18] = {
-    {"01d", "Clear"},
-    {"02d", "Few_clouds"},
-    {"03d", "Scattered_clouds"},
-    {"04d", "Broken_clouds"},
-    {"09d", "Shower_rain"},
-    {"10d", "Rain"},
-    {"11d", "Thunderstorm"},
-    {"50d", "Mist"},
-    {"13d", "Snow"},
-    {"01n", "Clear"},
-    {"02n", "Few_clouds"},
-    {"03n", "Scattered_clouds"},
-    {"04n", "Broken_clouds"},
-    {"09n", "Shower_rain"},
-    {"10n", "Rain"},
-    {"11n", "Thunderstorm"},
-    {"50n", "Mist"},
-    {"13n", "Snow"}
+    {"01d", CLEAR},
+    {"02d", FEW_CLOUDS},
+    {"03d", SCATTERED_CLOUDS},
+    {"04d", BROKEN_CLOUDS},
+    {"09d", SHOWER_RAIN},
+    {"10d", RAIN},
+    {"11d", THUNDERSTORM},
+    {"50d", MIST},
+    {"13d", SNOW},
+    {"01n", CLEAR},
+    {"02n", FEW_CLOUDS},
+    {"03n", SCATTERED_CLOUDS},
+    {"04n", BROKEN_CLOUDS},
+    {"09n", SHOWER_RAIN},
+    {"10n", RAIN},
+    {"11n", THUNDERSTORM},
+    {"50n", MIST},
+    {"13n", SNOW}
 };
 
 
