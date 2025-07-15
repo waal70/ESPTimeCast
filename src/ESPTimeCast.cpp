@@ -497,7 +497,7 @@ void performDoorbellAnimation()
 
 uint8_t* getWeatherIcon(const char *iconId)
 {
-  for (int i = 0; i < sizeof(APIData) / sizeof(APIData[0]); i++)
+  for (unsigned int i = 0; i < sizeof(APIData) / sizeof(APIData[0]); i++)
   {
     if (strcmp(APIData[i].id, iconId) == 0)
     {

@@ -3,7 +3,7 @@
 
 // https://pjrp.github.io/MDParolaFontEditor
 
-MD_MAX72XX::fontType_t mfactory[] PROGMEM = 
+MD_MAX72XX::fontType_t mFactory[] PROGMEM = 
 {
 	1, 0, 	// 0                                               - 'Empty Cell'
 	8, 165, 66, 153, 36, 36, 153, 66, 165, 	// 1               - 'CLEAR'
@@ -28,7 +28,7 @@ MD_MAX72XX::fontType_t mfactory[] PROGMEM =
 	1, 0, 	// 20                                              - 'Half Block Bottom'
 	8, 248, 32, 224, 248, 40, 241, 83, 231, 	// 21          - 'hPa rising'
 	8, 248, 32, 224, 248, 40, 243, 83, 227, 	// 22          - 'hPa equal'
-	8, 248, 32, 224, 248, 40, 247, 86, 228, 	// 23          - 'hPa falling'
+	8, 248, 32, 224, 248, 40, 244, 86, 231, 	// 23          - 'hPa falling'
 	1, 0, 	// 24                                              - 'Up Arrow'
 	1, 0, 	// 25                                              - 'Down Arrow'
 	1, 0, 	// 26                                              - 'Right Arrow'
@@ -261,4 +261,4 @@ MD_MAX72XX::fontType_t mfactory[] PROGMEM =
 	0, 	// 253                                                 - 'ý'
 	0, 	// 254                                                 - 'þ'
 	0, 	// 255
-}
+};
