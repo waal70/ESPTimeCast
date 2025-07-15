@@ -660,6 +660,7 @@ void fetchWeather()
     const char *icon = doc["weather"][0]["icon"];
     uint8_t* iconData = getWeatherIcon(icon);
     DEBUG_PRINTF("[WEATHER] Icon: %s\n", icon);
+    DEBUG_PRINTLN(iconData ? "[WEATHER] Icon data found" : "[WEATHER] Icon data not found");
   }
   else
   {
