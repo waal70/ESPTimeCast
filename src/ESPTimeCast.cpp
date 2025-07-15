@@ -50,7 +50,9 @@ char timeZone[64] = "";
 unsigned long clockDuration = 10000;
 unsigned long weatherDuration = 5000;
 
-int DOORBELL_EVENT = 0;
+int EVENT_DOORBELL = 0; // If this is set to 1, the doorbell animation will be triggered
+int EVENT_ETEN = 0; // If this is set to 1, the kom eten animation will be triggered
+int EVENT_KOMEN = 0; // If this is set to 1, the kom je? animation will be triggered
 
 // ADVANCED SETTINGS
 int brightness = 7;
@@ -465,7 +467,7 @@ void setupWebServer()
     // Here you can handle the doorbell event, e.g., play a sound or log it
     
     P.displayText("De bel!", PA_CENTER, 1000, 0, PA_PRINT, PA_NO_EFFECT);
-    DOORBELL_EVENT = 1; // Call your doorbell animation function
+    EVENT_DOORBELL = 1; // Call your doorbell animation function
     request->send(200, "text/plain", "Doorbell event received"); });
 
   server.begin();
@@ -707,10 +709,20 @@ void setup()
 
 void loop()
 {
-  if (DOORBELL_EVENT == 1)
+  if (EVENT_DOORBELL == 1)
   {
     performDoorbellAnimation();
-    DOORBELL_EVENT = 0; // Reset the event
+    EVENT_DOORBELL = 0; // Reset the event
+  }
+  if (EVENT_ETEN == 1)
+  {
+    P.displayText("Kom eten!", PA_CENTER, 1000, 0, PA_PRINT, PA_NO_EFFECT);
+    EVENT_ETEN = 0; // Reset the event
+  }
+  if (EVENT_KOMEN == 1)
+  {
+    P.displayText("Kom je?", PA_CENTER, 1000, 0, PA_PRINT, PA_NO_EFFECT);
+    EVENT_KOMEN = 0; // Reset the event
   }
   // --- AP Mode Animation ---
   static unsigned long apAnimTimer = 0;
